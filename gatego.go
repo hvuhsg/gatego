@@ -36,7 +36,7 @@ func (gg GateGo) serveHandlers(table HandlerTable) error {
 	proxyMux := http.NewServeMux()
 
 	proxyMux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		handler := GetHandler(table, r.Host, r.URL.Path)
+		handler := table.GetHandler(r.Host, r.URL.Path)
 
 		if handler == nil {
 			w.WriteHeader(http.StatusNotFound)

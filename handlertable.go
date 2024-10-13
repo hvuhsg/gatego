@@ -8,7 +8,7 @@ import (
 	"github.com/hvuhsg/gatego/pkg/pathtree"
 )
 
-type HandlerTable = map[string]*pathtree.Trie[http.Handler]
+type HandlerTable map[string]*pathtree.Trie[http.Handler]
 
 func cleanDomain(domain string) string {
 	return removePort(strings.ToLower(domain))
@@ -38,7 +38,7 @@ func BuildHandlersTable(servicesConfig []config.Service) (HandlerTable, error) {
 	return servers, nil
 }
 
-func GetHandler(table HandlerTable, domain string, path string) http.Handler {
+func (table HandlerTable) GetHandler(domain string, path string) http.Handler {
 	cleanedDomain := cleanDomain(domain)
 
 	pathTree, ok := table[cleanedDomain]
