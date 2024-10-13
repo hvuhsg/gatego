@@ -118,7 +118,7 @@ The Server support load balancing between a number of backend servers and allow 
 Here’s a generic example of how you can configure the reverse proxy:
 
 ```yaml
-version: 'your-version'
+version: '0.0.1'
 host: your-host
 port: your-port
 

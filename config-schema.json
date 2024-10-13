@@ -1,0 +1,192 @@
+{
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"type": "object",
+	"properties": {
+		"version": {
+			"type": "string",
+			"description": "Version of the configuration."
+		},
+		"host": {
+			"type": "string",
+			"description": "The host where the service will run."
+		},
+		"port": {
+			"type": "integer",
+			"description": "The port for the service."
+		},
+		"ssl": {
+			"type": "object",
+			"properties": {
+				"keyfile": {
+					"type": "string",
+					"description": "Path to SSL key file."
+				},
+				"certfile": {
+					"type": "string",
+					"description": "Path to SSL certificate file."
+				}
+			},
+			"required": [
+				"keyfile",
+				"certfile"
+			],
+			"description": "SSL configuration for the server."
+		},
+		"services": {
+			"type": "array",
+			"items": {
+				"type": "object",
+				"properties": {
+					"domain": {
+						"type": "string",
+						"description": "Domain name for the service."
+					},
+					"endpoints": {
+						"type": "array",
+						"items": {
+							"type": "object",
+							"properties": {
+								"path": {
+									"type": "string",
+									"description": "Endpoint path that will be served."
+								},
+								"directory": {
+									"type": "string",
+									"description": "Directory to serve files from."
+								},
+								"destination": {
+									"type": "string",
+									"description": "Server URL to proxy the requests there."
+								},
+								"backend": {
+									"type": "object",
+									"properties": {
+										"balance_policy": {
+											"type": "string",
+											"enum": [
+												"round-robin",
+												"random",
+												"least-latancy"
+											],
+											"description": "Load balancing policy for backend servers."
+										},
+										"servers": {
+											"type": "array",
+											"items": {
+												"type": "object",
+												"properties": {
+													"url": {
+														"type": "string",
+														"description": "URL of the backend server."
+													},
+													"weight": {
+														"type": "integer",
+														"description": "Weight of the backend server for load balancing."
+													}
+												},
+												"required": [
+													"url",
+													"weight"
+												]
+											}
+										}
+									},
+									"required": [
+										"balance_policy",
+										"servers"
+									]
+								},
+								"minify": {
+									"type": "object",
+									"properties": {
+										"js": {
+											"type": "boolean",
+											"description": "Minify JavaScript."
+										},
+										"html": {
+											"type": "boolean",
+											"description": "Minify HTML."
+										},
+										"css": {
+											"type": "boolean",
+											"description": "Minify CSS."
+										},
+										"json": {
+											"type": "boolean",
+											"description": "Minify JSON."
+										},
+										"xml": {
+											"type": "boolean",
+											"description": "Minify XML."
+										},
+										"svg": {
+											"type": "boolean",
+											"description": "Minify SVG."
+										},
+										"all": {
+											"type": "boolean",
+											"description": "Enable minification for all content types."
+										}
+									}
+								},
+								"gzip": {
+									"type": "boolean",
+									"description": "Enable GZIP compression."
+								},
+								"timeout": {
+									"type": "string",
+									"description": "Custom timeout for backend responses."
+								},
+								"max_size": {
+									"type": "integer",
+									"description": "Max request size in bytes."
+								},
+								"ratelimits": {
+									"type": "array",
+									"items": {
+										"type": "string",
+										"description": "Rate limits in the format of requests per time period (e.g., ip-10/m)."
+									}
+								},
+								"openapi": {
+									"type": "string",
+									"description": "Path to the OpenAPI specification for request/response validation."
+								}
+							},
+							"required": [
+								"path"
+							],
+							"oneOf": [
+								{
+									"required": [
+										"directory"
+									]
+								},
+								{
+									"required": [
+										"destination"
+									]
+								},
+								{
+									"required": [
+										"backend"
+									]
+								}
+							]
+						}
+					}
+				},
+				"required": [
+					"domain",
+					"endpoints"
+				]
+			}
+		}
+	},
+	"required": [
+		"version",
+		"host",
+		"port",
+		"services"
+	]
+}
