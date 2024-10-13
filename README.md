@@ -1,5 +1,7 @@
 # Reverse Proxy Server
 
+[![Go](https://github.com/hvuhsg/gatego/actions/workflows/go-tests.yml/badge.svg)](https://github.com/hvuhsg/gatego/actions/workflows/go-tests.yml)
+
 ## Overview
 
 This reverse proxy server is designed to forward incoming requests to internal services, while offering advanced features such as SSL termination, rate limiting, content optimization, and OpenAPI-based request/response validation.
