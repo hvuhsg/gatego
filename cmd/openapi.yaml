@@ -1,0 +1,41 @@
+openapi: 3.1.0
+
+info:
+  title: Simple API
+  version: 1.0.0
+  description: A simple API with one root path and one query parameter
+
+paths:
+  /:
+    post:
+      summary: Root endpoint
+      description: Returns a greeting message
+      parameters:
+        - in: query
+          name: name
+          schema:
+            type: string
+            maxLength: 10
+          required: true
+          description: Name of the person to greet
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Hello, World!"
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Invalid query parameter"
