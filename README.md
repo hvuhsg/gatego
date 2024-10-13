@@ -49,7 +49,7 @@ ssl:
 ```yaml
 - path: /
   timeout: 5s  # Custom timeout for backend responses (Default 30s)
-  max-size: 2048  # Max request size in bytes (Default 10MB)
+  max_size: 2048  # Max request size in bytes (Default 10MB)
 ```
 
 ### 4. Rate Limiting
@@ -83,6 +83,36 @@ You can specify the OpenAPI file path in the configuration, and the server will 
   openapi: /path/to/openapi.yaml  # OpenAPI file for request/response validation
 ```
 
+### 6. Load Balancing and File Serving
+
+File serving is used when the `directory` field is set.
+> The endpoint path is removed from the request path before the file lookup. For example a path of /static and request path of /static/file.txt and a directory /var/www will search the file in /var/www/file.txt and not /var/www/static/file.txt
+
+```yaml
+- path: /static
+  directory: /var/www/
+```
+
+The Server support load balancing between a number of backend servers and allow you to choose the balancing policy.
+
+
+```yaml
+- path: /static
+  backend:
+    balance_policy: 'round-robin'
+    servers:
+      - url: http://backend-server-1/
+        weight: 1
+      - url: http://backend-server-2/
+        weight: 2
+```
+
+#### Supported Policies:
+- `round-robin` (affected by weights)
+- `random` (affected by weights)
+- `least-latancy` (**not** affected by weights)
+
+
 ## Configuration Example
 
 Here’s a generic example of how you can configure the reverse proxy:
@@ -100,7 +130,16 @@ services:
   - domain: your-domain.com
     endpoints:
       - path: /your-endpoint  # will be served for every request with path that start with /your-endpoint (Example: /your-endpoint/1)
-        destination: http://your-backend-service/
+
+        # directory: /home/yoyo/  # For static files serving
+        # destination: http://your-backend-service/
+        backend:
+          balance_policy: 'round-robin'  # Can be 'round-robin', 'random', or 'least-latancy'
+          servers:
+            - url: http://backend-server-1/
+              weight: 1
+            - url: http://backend-server-2/
+              weight: 2
         
         minify:
           js: true
@@ -114,7 +153,7 @@ services:
         gzip: true  # Enable GZIP compression
         
         timeout: 5s  # Custom timeout for backend responses (Default 30s)
-        max-size: 2048  # Max request size in bytes (Default 10MB)
+        max_size: 2048  # Max request size in bytes (Default 10MB)
         
         ratelimits:
           - ip-10/m  # Limit to 10 requests per minute per IP

@@ -27,6 +27,8 @@ func GetBaseHandler(service config.Service, path config.Path) (http.Handler, err
 	} else if path.Directory != nil && *path.Directory != "" {
 		handler := handlers.NewFiles(*path.Directory, path.Path)
 		return handler, nil
+	} else if path.Backend != nil {
+		return handlers.NewBalancer(service, path)
 	} else {
 		// Should not be reached (early validation should prevent it)
 		return nil, ErrUnsupportedBaseHandler

@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"os"
 	"regexp"
+	"slices"
 	"strings"
 	"time"
 
@@ -17,6 +18,7 @@ import (
 
 const DefaultTimeout = time.Second * 30
 const DefaultMaxRequestSize = 1024 * 10 // 10 MB
+var SupportedBalancePolicies = []string{"round-robin", "random", "least-latancy"}
 
 type Minify struct {
 	ALL  bool `yaml:"all"`
@@ -28,18 +30,44 @@ type Minify struct {
 	XML  bool `yaml:"xml"`
 }
 
+type Backend struct {
+	BalancePolicy string `yaml:"balance_policy"`
+	Servers       []struct {
+		URL    string `yaml:"url"`
+		Weight uint   `yaml:"weight"`
+	}
+}
+
+func (b Backend) validate() error {
+	if !slices.Contains(SupportedBalancePolicies, b.BalancePolicy) {
+		return fmt.Errorf("balance policy '%s' is not supported", b.BalancePolicy)
+	}
+
+	if len(b.Servers) == 0 {
+		return errors.New("backend require at least one server")
+	}
+
+	for _, server := range b.Servers {
+		if !isValidURL(server.URL) {
+			return fmt.Errorf("invalid backend server url '%s'", server.URL)
+		}
+	}
+
+	return nil
+}
+
 type Path struct {
-	Path         string             `yaml:"path"`
-	PreserveHost *bool              `yaml:"preserve_host"`
-	Destination  *string            `yaml:"destination"` // The domain / url of the service server
-	Directory    *string            `yaml:"directory"`   // path to dir you want to serve
-	Headers      *map[string]string `yaml:"headers"`
-	Minify       *Minify            `yaml:"minify"`
-	Gzip         *bool              `yaml:"gzip"`
-	Timeout      time.Duration      `yaml:"timeout"`
-	MaxSize      uint64             `yaml:"max-size"`
-	OpenAPI      *string            `yaml:"openapi"`
-	RateLimits   []string           `yaml:"ratelimits"`
+	Path        string             `yaml:"path"`
+	Destination *string            `yaml:"destination"` // The domain / url of the service server
+	Directory   *string            `yaml:"directory"`   // path to dir you want to serve
+	Backend     *Backend           `yaml:"backend"`     // List of servers to load balance between
+	Headers     *map[string]string `yaml:"headers"`
+	Minify      *Minify            `yaml:"minify"`
+	Gzip        *bool              `yaml:"gzip"`
+	Timeout     time.Duration      `yaml:"timeout"`
+	MaxSize     uint64             `yaml:"max_size"`
+	OpenAPI     *string            `yaml:"openapi"`
+	RateLimits  []string           `yaml:"ratelimits"`
 }
 
 func (p Path) validate() error {
@@ -63,8 +91,14 @@ func (p Path) validate() error {
 		}
 	}
 
-	if p.Destination == nil && p.Directory == nil {
-		return errors.New("path must have destination or directory")
+	if p.Backend != nil {
+		if err := p.Backend.validate(); err != nil {
+			return err
+		}
+	}
+
+	if p.Destination == nil && p.Directory == nil && p.Backend == nil {
+		return errors.New("path must have destination or directory or backend")
 	}
 
 	if p.OpenAPI != nil {
@@ -164,15 +198,6 @@ func ParseConfig(filepath string, currentVersion string) (Config, error) {
 	err = yaml.Unmarshal(data, &c)
 	if err != nil {
 		return Config{}, err
-	}
-
-	defaultPreserveHost := true
-	for _, service := range c.Services {
-		for _, path := range service.Paths {
-			if path.PreserveHost == nil {
-				path.PreserveHost = &defaultPreserveHost
-			}
-		}
 	}
 
 	if err := c.Validate(currentVersion); err != nil {

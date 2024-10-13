@@ -11,7 +11,14 @@ services:
     endpoints:
       - path: /
         # directory: /home/yoyo/  # Instead of destination
-        destination: http://127.0.0.1:4007/
+        # destination: http://127.0.0.1:4007/
+        backend:
+          balance_policy: 'least-latancy'  # Can be 'round-robin', 'random', or 'least-latancy'
+          servers:
+            - url: http://127.0.0.1:4007/
+              weight: 1
+            - url: http://127.0.0.1:4008/
+              weight: 2
         
         minify:
           # all: true
@@ -25,10 +32,10 @@ services:
         gzip: true
         
         timeout: 3s  # Default (30s)
-        max-size: 1024  # Default (10MB)
+        max_size: 1024  # Default (10MB)
 
         ratelimits:
-          - ip-6/m  # Limit requests from the same IP to 6 requests per minute.
+          - ip-60/m  # Limit requests from the same IP to 6 requests per minute.
           - ip-100/d
 
         openapi: openapi.yaml
