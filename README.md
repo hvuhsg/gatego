@@ -1,6 +1,6 @@
 # Reverse Proxy Server
 
-[![Tests](https://github.com/hvuhsg/gatego/actions/workflows/go-tests.yml/badge.svg)](https://github.com/hvuhsg/gatego/actions/workflows/go-tests.yml)
+[![Tests](https://github.com/hvuhsg/gatego/actions/workflows/go-tests.yml/badge.svg?branch=main)](https://github.com/hvuhsg/gatego/actions/workflows/go-tests.yml)
 
 ## Overview
 
