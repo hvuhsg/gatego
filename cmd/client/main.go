@@ -24,7 +24,7 @@ func sendRequest() *http.Response {
 	}
 
 	// Create a new POST request with the JSON payload
-	resp, err := http.NewRequest(http.MethodPost, "http://localho.st:8004/?name=yoyo", bytes.NewBuffer(jsonData))
+	resp, err := http.NewRequest(http.MethodPost, "http://localhost:8004/?name=yoyo", bytes.NewBuffer(jsonData))
 	if err != nil {
 		log.Fatal("Error creating request:", err)
 	}
