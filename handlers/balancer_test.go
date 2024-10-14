@@ -5,7 +5,9 @@ import (
 	"net/http/httptest"
 	"net/http/httputil"
 	"net/url"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/hvuhsg/gatego/config"
 )
@@ -74,31 +76,46 @@ func TestRandomPolicy(t *testing.T) {
 	}
 }
 
-// func TestLeastLatencyPolicy(t *testing.T) {
-// 	servers := []ServerAndWeight{
-// 		{server: createDummyProxy("http://localhost:8001/"), weight: 1, url: "http://localhost:8001/"},
-// 		{server: createDummyProxy("http://localhost:8002/"), weight: 1, url: "http://localhost:8002/"},
-// 	}
+func TestLeastLatencyPolicy(t *testing.T) {
+	// Create mock servers
+	server1 := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		time.Sleep(20 * time.Millisecond)
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("Slow response from server 1"))
+	}))
+	defer server1.Close()
 
-// 	policy := NewLeastLatencyPolicy(servers)
+	server2 := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("Fast response from server 2"))
+	}))
+	defer server2.Close()
 
-// 	// Initially, all servers should have 0 latency
-// 	server := policy.GetNext()
-// 	if server == nil {
-// 		t.Fatal("Got nil server from LeastLatencyPolicy")
-// 	}
+	servers := []ServerAndWeight{
+		{server: httputil.NewSingleHostReverseProxy(mustParseURL(server1.URL)), weight: 1, url: server1.URL},
+		{server: httputil.NewSingleHostReverseProxy(mustParseURL(server2.URL)), weight: 1, url: server2.URL},
+	}
 
-// 	// Simulate a request and update latency
-// 	w := httptest.NewRecorder()
-// 	r, _ := http.NewRequest("GET", "http://localhost:8001", nil)
-// 	server.ServeHTTP(w, r)
+	policy := NewLeastLatencyPolicy(servers)
 
-// 	// The policy should now prefer the other server
-// 	server = policy.GetNext()
-// 	if getProxyURL(server) != "http://localhost:8002/" {
-// 		t.Error("LeastLatencyPolicy did not choose the server with least latency")
-// 	}
-// }
+	// Initially, all servers should have 0 latency
+	server := policy.GetNext()
+	if server == nil {
+		t.Fatal("Got nil server from LeastLatencyPolicy")
+	}
+
+	// Simulate a request and update latency
+	w := httptest.NewRecorder()
+	r, _ := http.NewRequest("GET", server1.URL, nil)
+	server.ServeHTTP(w, r)
+
+	// The policy should now prefer the fast second server
+	server = policy.GetNext()
+	serverURL := strings.TrimSuffix(getProxyURL(server), "/")
+	if serverURL != strings.TrimSuffix(server2.URL, "/") {
+		t.Errorf("LeastLatencyPolicy did not choose the server with least latency Got %s Want %s", serverURL, server2.URL)
+	}
+}
 
 func TestBalancerServeHTTP(t *testing.T) {
 	// Create mock servers
