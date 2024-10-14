@@ -20,16 +20,6 @@ const DefaultTimeout = time.Second * 30
 const DefaultMaxRequestSize = 1024 * 10 // 10 MB
 var SupportedBalancePolicies = []string{"round-robin", "random", "least-latancy"}
 
-type Minify struct {
-	ALL  bool `yaml:"all"`
-	JS   bool `yaml:"js"`
-	CSS  bool `yaml:"css"`
-	HTML bool `yaml:"html"`
-	JSON bool `yaml:"json"`
-	SVG  bool `yaml:"svg"`
-	XML  bool `yaml:"xml"`
-}
-
 type Backend struct {
 	BalancePolicy string `yaml:"balance_policy"`
 	Servers       []struct {
@@ -62,7 +52,7 @@ type Path struct {
 	Directory   *string            `yaml:"directory"`   // path to dir you want to serve
 	Backend     *Backend           `yaml:"backend"`     // List of servers to load balance between
 	Headers     *map[string]string `yaml:"headers"`
-	Minify      *Minify            `yaml:"minify"`
+	Minify      []string           `yaml:"minify"`
 	Gzip        *bool              `yaml:"gzip"`
 	Timeout     time.Duration      `yaml:"timeout"`
 	MaxSize     uint64             `yaml:"max_size"`

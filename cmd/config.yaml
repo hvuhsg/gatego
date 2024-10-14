@@ -18,14 +18,7 @@ services:
             - url: http://127.0.0.1:4008/
               weight: 2
         
-        minify:
-          # all: true
-          js: true
-          html: true
-          css: true
-          json: true
-          xml: true
-          svg: true
+        minify: [js, html, css, json, xml, svg]
 
         gzip: true
         
