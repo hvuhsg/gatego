@@ -18,7 +18,7 @@ import (
 
 const DefaultTimeout = time.Second * 30
 const DefaultMaxRequestSize = 1024 * 10 // 10 MB
-var SupportedBalancePolicies = []string{"round-robin", "random", "least-latancy"}
+var SupportedBalancePolicies = []string{"round-robin", "random", "least-latency"}
 
 type Backend struct {
 	BalancePolicy string `yaml:"balance_policy"`

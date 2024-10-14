@@ -104,7 +104,7 @@ The Server support load balancing between a number of backend servers and allow 
 #### Supported Policies:
 - `round-robin` (affected by weights)
 - `random` (affected by weights)
-- `least-latancy` (**not** affected by weights)
+- `least-latency` (**not** affected by weights)
 
 
 ## Configuration Example
@@ -128,7 +128,7 @@ services:
         # directory: /home/yoyo/  # For static files serving
         # destination: http://your-backend-service/
         backend:
-          balance_policy: 'round-robin'  # Can be 'round-robin', 'random', or 'least-latancy'
+          balance_policy: 'round-robin'  # Can be 'round-robin', 'random', or 'least-latency'
           servers:
             - url: http://backend-server-1/
               weight: 1

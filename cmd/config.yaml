@@ -11,7 +11,7 @@ services:
         # directory: /home/yoyo/  # Instead of destination
         destination: http://127.0.0.1:4007/
         # backend:
-        #   balance_policy: 'least-latancy'  # Can be 'round-robin', 'random', or 'least-latancy'
+        #   balance_policy: 'least-latency'  # Can be 'round-robin', 'random', or 'least-latency'
         #   servers:
         #     - url: http://127.0.0.1:4007/
         #       weight: 1

@@ -50,7 +50,7 @@ func NewBalancer(service config.Service, path config.Path) (*Balancer, error) {
 		policy = NewRoundRobinPolicy(serversAndWeights)
 	case "random":
 		policy = NewRandomPolicy(serversAndWeights)
-	case "least-latancy":
+	case "least-latency":
 		policy = NewLeastLatencyPolicy(serversAndWeights)
 	}
 
@@ -123,30 +123,30 @@ func (rp *RandomPolicy) GetNext() *httputil.ReverseProxy {
 	return rp.servers[0].server
 }
 
-type LeastLatancyPolicy struct {
-	serversLatancy map[string]int64
+type LeastLatencyPolicy struct {
+	serversLatency map[string]int64
 	servers        []ServerAndWeight
 }
 
-func NewLeastLatencyPolicy(serversAndURLs []ServerAndWeight) *LeastLatancyPolicy {
-	serversLatancy := make(map[string]int64, len(serversAndURLs))
+func NewLeastLatencyPolicy(serversAndURLs []ServerAndWeight) *LeastLatencyPolicy {
+	serversLatency := make(map[string]int64, len(serversAndURLs))
 
 	for _, serverAndWeight := range serversAndURLs {
-		serversLatancy[serverAndWeight.url] = 0
+		serversLatency[serverAndWeight.url] = 0
 	}
 
-	return &LeastLatancyPolicy{servers: serversAndURLs, serversLatancy: serversLatancy}
+	return &LeastLatencyPolicy{servers: serversAndURLs, serversLatency: serversLatency}
 }
 
-func (llp *LeastLatancyPolicy) GetNext() *httputil.ReverseProxy {
+func (llp *LeastLatencyPolicy) GetNext() *httputil.ReverseProxy {
 
 	bestServerURL := llp.servers[0].url
-	var bestLatancy int64 = math.MaxInt64
+	var bestLatency int64 = math.MaxInt64
 
-	for url, latancy := range llp.serversLatancy {
-		if latancy < bestLatancy {
+	for url, latency := range llp.serversLatency {
+		if latency < bestLatency {
 			bestServerURL = url
-			bestLatancy = latancy
+			bestLatency = latency
 		}
 	}
 
@@ -158,14 +158,14 @@ func (llp *LeastLatancyPolicy) GetNext() *httputil.ReverseProxy {
 		}
 	}
 
-	// TODO: use decaing latancy for extream latancy conditions
+	// TODO: use decaing latency for extream latency conditions
 
 	startTime := time.Now().UnixMicro()
 	chosenServer.server.ErrorHandler = func(w http.ResponseWriter, r *http.Request, err error) {
-		llp.serversLatancy[chosenServer.url] = time.Now().UnixMicro() - startTime
+		llp.serversLatency[chosenServer.url] = time.Now().UnixMicro() - startTime
 	}
 	chosenServer.server.ModifyResponse = func(r *http.Response) error {
-		llp.serversLatancy[chosenServer.url] = time.Now().UnixMicro() - startTime
+		llp.serversLatency[chosenServer.url] = time.Now().UnixMicro() - startTime
 		return nil
 	}
 
