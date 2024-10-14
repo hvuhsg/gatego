@@ -148,6 +148,8 @@ services:
           - ip-500/d  # Limit to 500 requests per day per IP
         
         openapi: /path/to/openapi.yaml  # OpenAPI file for request/response validation
+
+        omit_headers: [Authorization, X-API-Key, X-Secret-Token]
 ```
 
 ### Breakdown:

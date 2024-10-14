@@ -30,3 +30,5 @@ services:
           - ip-100/d
 
         openapi: openapi.yaml
+
+        omit_headers: [Authorization, X-API-Key, X-Secret-Token]

@@ -73,6 +73,10 @@ func BuildHandler(service config.Service, path config.Path) (http.Handler, error
 		handlerWithMiddlewares.Add(middlewares.GzipMiddleware)
 	}
 
+	if len(path.OmitHeaders) > 0 {
+		handlerWithMiddlewares.Add(middlewares.NewOmitHeadersMiddleware(path.OmitHeaders))
+	}
+
 	minifyConfig := middlewares.MinifyConfig{
 		ALL:  slices.Contains(path.Minify, "all"),
 		JS:   slices.Contains(path.Minify, "js"),
