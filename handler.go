@@ -3,6 +3,7 @@ package gatego
 import (
 	"errors"
 	"net/http"
+	"slices"
 
 	"github.com/hvuhsg/gatego/config"
 	"github.com/hvuhsg/gatego/handlers"
@@ -69,18 +70,16 @@ func BuildHandler(service config.Service, path config.Path) (http.Handler, error
 		handlerWithMiddlewares.Add(middlewares.GzipMiddleware)
 	}
 
-	if path.Minify != nil {
-		minifyConfig := middlewares.MinifyConfig{
-			ALL:  path.Minify.ALL,
-			JS:   path.Minify.JS,
-			HTML: path.Minify.HTML,
-			CSS:  path.Minify.CSS,
-			JSON: path.Minify.JSON,
-			SVG:  path.Minify.SVG,
-			XML:  path.Minify.XML,
-		}
-		handlerWithMiddlewares.Add(middlewares.NewMinifyMiddleware(minifyConfig))
+	minifyConfig := middlewares.MinifyConfig{
+		ALL:  slices.Contains(path.Minify, "all"),
+		JS:   slices.Contains(path.Minify, "js"),
+		HTML: slices.Contains(path.Minify, "html"),
+		CSS:  slices.Contains(path.Minify, "css"),
+		JSON: slices.Contains(path.Minify, "json"),
+		SVG:  slices.Contains(path.Minify, "svg"),
+		XML:  slices.Contains(path.Minify, "xml"),
 	}
+	handlerWithMiddlewares.Add(middlewares.NewMinifyMiddleware(minifyConfig))
 
 	if path.OpenAPI != nil {
 		openapiMiddleware, err := middlewares.NewOpenAPIValidationMiddleware(*path.OpenAPI)
