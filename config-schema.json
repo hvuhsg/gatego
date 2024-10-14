@@ -97,36 +97,9 @@
 									]
 								},
 								"minify": {
-									"type": "object",
-									"properties": {
-										"js": {
-											"type": "boolean",
-											"description": "Minify JavaScript."
-										},
-										"html": {
-											"type": "boolean",
-											"description": "Minify HTML."
-										},
-										"css": {
-											"type": "boolean",
-											"description": "Minify CSS."
-										},
-										"json": {
-											"type": "boolean",
-											"description": "Minify JSON."
-										},
-										"xml": {
-											"type": "boolean",
-											"description": "Minify XML."
-										},
-										"svg": {
-											"type": "boolean",
-											"description": "Minify SVG."
-										},
-										"all": {
-											"type": "boolean",
-											"description": "Enable minification for all content types."
-										}
+									"type": "array",
+									"items": {
+										"type": "string"
 									}
 								},
 								"gzip": {
