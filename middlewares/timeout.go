@@ -32,7 +32,7 @@ func NewTimeoutMiddleware(timeout time.Duration) func(next http.Handler) http.Ha
 			case <-ctx.Done():
 				// If the context is canceled (due to timeout), return an error response
 				if ctx.Err() == context.DeadlineExceeded {
-					http.Error(w, "Request timed out", http.StatusServiceUnavailable)
+					http.Error(w, "Request timed out", http.StatusGatewayTimeout)
 				}
 			case <-done:
 				// If the request finished within the timeout, return the result

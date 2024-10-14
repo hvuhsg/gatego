@@ -27,7 +27,7 @@ func TestTimeoutMiddleware(t *testing.T) {
 			name:           "Request times out",
 			timeout:        50 * time.Millisecond,
 			handlerSleep:   100 * time.Millisecond,
-			expectedStatus: http.StatusServiceUnavailable,
+			expectedStatus: http.StatusGatewayTimeout,
 		},
 	}
 
@@ -71,6 +71,8 @@ func TestTimeoutMiddlewareCancelContext(t *testing.T) {
 		if r.Context().Err() == context.DeadlineExceeded {
 			w.WriteHeader(http.StatusGatewayTimeout)
 		}
+
+		w.WriteHeader(http.StatusOK)
 	})
 
 	wrappedHandler := middlewares.NewTimeoutMiddleware(50 * time.Millisecond)(handler)
@@ -84,8 +86,8 @@ func TestTimeoutMiddlewareCancelContext(t *testing.T) {
 
 	wrappedHandler.ServeHTTP(rr, req)
 
-	if status := rr.Code; status != http.StatusServiceUnavailable {
+	if status := rr.Code; status != http.StatusGatewayTimeout {
 		t.Errorf("handler returned wrong status code: got %v want %v",
-			status, http.StatusServiceUnavailable)
+			status, http.StatusGatewayTimeout)
 	}
 }
