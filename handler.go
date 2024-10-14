@@ -3,6 +3,7 @@ package gatego
 import (
 	"errors"
 	"net/http"
+	"os"
 	"slices"
 
 	"github.com/hvuhsg/gatego/config"
@@ -43,6 +44,8 @@ func BuildHandler(service config.Service, path config.Path) (http.Handler, error
 	}
 
 	handlerWithMiddlewares := middlewares.NewHandlerWithMiddleware(handler)
+
+	handlerWithMiddlewares.Add(middlewares.NewLoggingMiddleware(os.Stdout))
 
 	if path.Timeout == 0 {
 		path.Timeout = config.DefaultTimeout
