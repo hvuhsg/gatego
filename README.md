@@ -27,14 +27,8 @@ ssl:
 - path: /
 
   # Optional
-  minify:
-    js: true
-    html: true
-    css: true
-    json: true
-    xml: true
-    svg: true
-    # You can use 'all: true' instaed to enable all content-types
+  minify: [js, html, css, json, xml, svg]
+  # You can use 'all' instaed to enable all content-types
   
   # Optional
   gzip: true  # Enable GZIP compression
@@ -141,14 +135,8 @@ services:
             - url: http://backend-server-2/
               weight: 2
         
-        minify:
-          js: true
-          html: true
-          css: true
-          json: true
-          xml: true
-          svg: true
-          # You can use 'all: true' instaed to enable all content-types
+        minify: [js, html, css, json, xml, svg]
+        # You can use 'all' instaed to enable all content-types
 
         gzip: true  # Enable GZIP compression
         
