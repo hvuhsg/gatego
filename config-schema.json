@@ -96,6 +96,13 @@
 										"servers"
 									]
 								},
+								"omit_headers": {
+									"type": "array",
+									"description": "List of headers to omit for secrets protection.",
+									"items": {
+										"type": "string"
+									}
+								},
 								"minify": {
 									"type": "array",
 									"items": {
