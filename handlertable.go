@@ -14,7 +14,7 @@ func cleanDomain(domain string) string {
 	return removePort(strings.ToLower(domain))
 }
 
-func BuildHandlersTable(servicesConfig []config.Service) (HandlerTable, error) {
+func buildHandlersTable(servicesConfig []config.Service) (HandlerTable, error) {
 	servers := make(map[string]*pathtree.Trie[http.Handler])
 
 	for _, service := range servicesConfig {
