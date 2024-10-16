@@ -40,3 +40,5 @@ services:
             headers:
               Host: domain.org
               Authorization: "Bearer abc123"
+        
+        omit_headers: [Authorization, X-API-Key, X-Secret-Token]

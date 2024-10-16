@@ -83,6 +83,7 @@ type Path struct {
 	Directory   *string            `yaml:"directory"`   // path to dir you want to serve
 	Backend     *Backend           `yaml:"backend"`     // List of servers to load balance between
 	Headers     *map[string]string `yaml:"headers"`
+	OmitHeaders []string           `yaml:"omit_headers"` // Omit specified headers
 	Minify      []string           `yaml:"minify"`
 	Gzip        *bool              `yaml:"gzip"`
 	Timeout     time.Duration      `yaml:"timeout"`

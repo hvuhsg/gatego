@@ -173,6 +173,8 @@ services:
         
         openapi: /path/to/openapi.yaml  # OpenAPI file for request/response validation
 
+        omit_headers: [Authorization, X-API-Key, X-Secret-Token]  # Omit response headers
+
         checks:
           - name: "Health Check"
             
@@ -194,6 +196,7 @@ services:
               Host: domain.org
               Authorization: "Bearer abc123"
             # on_failure options will be added in the future
+
 ```
 
 ### Breakdown:
