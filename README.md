@@ -107,6 +107,30 @@ The Server support load balancing between a number of backend servers and allow 
 - `least-latency` (**not** affected by weights)
 
 
+### 7. Health Checks
+
+The server supports automated health checks for backend services. You can configure periodic checks to monitor the health of your backend servers under each endpoint's configuration.
+
+```yaml
+- path: /
+  checks:
+    - name: "Health Check"      # Descriptive name for the check
+      cron: "* * * * *"        # Cron expression for check frequency
+      # Supported cron macros:
+      # - @yearly (or @annually) - Run once a year
+      # - @monthly              - Run once a month
+      # - @weekly               - Run once a week
+      # - @daily                - Run once a day
+      # - @hourly               - Run once an hour
+      # - @minutely             - Run once a minute
+      method: GET              # HTTP method for the health check
+      url: "http://backend-server-1/up"  # Health check endpoint
+      timeout: 5s             # Timeout for health check requests
+      headers:                # Optional custom headers
+        Host: domain.org
+        Authorization: "Bearer abc123"
+```
+
 ## Configuration Example
 
 Here’s a generic example of how you can configure the reverse proxy:
@@ -149,7 +173,30 @@ services:
         
         openapi: /path/to/openapi.yaml  # OpenAPI file for request/response validation
 
-        omit_headers: [Authorization, X-API-Key, X-Secret-Token]
+        omit_headers: [Authorization, X-API-Key, X-Secret-Token]  # Omit response headers
+
+        checks:
+          - name: "Health Check"
+            
+            cron: "* * * * *" # == @minutely
+            # Support cron format and macros.
+            # Macros:
+            # - @yearly
+            # - @annually
+            # - @monthly
+            # - @weekly
+            # - @daily
+            # - @hourly
+            # - @minutely
+
+            method: GET  # HTTP Method
+            url: "http://backend-server-1/up"
+            timeout: 5s
+            headers:
+              Host: domain.org
+              Authorization: "Bearer abc123"
+            # on_failure options will be added in the future
+
 ```
 
 ### Breakdown:

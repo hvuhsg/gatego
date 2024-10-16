@@ -31,4 +31,14 @@ services:
 
         openapi: openapi.yaml
 
+        checks:
+          - name: "DB Health"
+            cron: "* * * * *"
+            method: GET
+            url: "http://127.0.0.1:4007/check_db"
+            timeout: 5s
+            headers:
+              Host: domain.org
+              Authorization: "Bearer abc123"
+        
         omit_headers: [Authorization, X-API-Key, X-Secret-Token]

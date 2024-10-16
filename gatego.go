@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/hvuhsg/gatego/config"
 )
@@ -18,10 +19,14 @@ func New(config config.Config) *GateGo {
 }
 
 func (gg GateGo) Run() error {
-	table, err := BuildHandlersTable(gg.config.Services)
+	table, err := buildHandlersTable(gg.config.Services)
 	if err != nil {
 		return err
 	}
+
+	// Gather checks and create checker
+	checker := createChecker(gg.config.Services)
+	checker.Start()
 
 	// Blocking until exit or error
 	err = gg.serveHandlers(table)
@@ -30,6 +35,29 @@ func (gg GateGo) Run() error {
 	}
 
 	return nil
+}
+
+func createChecker(services []config.Service) Checker {
+	checker := Checker{Delay: 5 * time.Second, OnFailure: func(err error) {}}
+
+	for _, service := range services {
+		for _, path := range service.Paths {
+			for _, checkConfig := range path.Checks {
+				check := Check{
+					Name:    checkConfig.Name,
+					Cron:    checkConfig.Cron,
+					URL:     checkConfig.URL,
+					Method:  checkConfig.Method,
+					Timeout: checkConfig.Timeout,
+					Headers: checkConfig.Headers,
+				}
+
+				checker.Checks = append(checker.Checks, check)
+			}
+		}
+	}
+
+	return checker
 }
 
 func (gg GateGo) serveHandlers(table HandlerTable) error {
