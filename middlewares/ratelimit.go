@@ -17,8 +17,7 @@ var SupportedZones = []string{"ip"}
 var ErrZoneNotSupported = errors.New("rate limit zone is not supported")
 
 type RateLimiter struct {
-	limiters map[string]*rate.Limiter
-	mu       sync.RWMutex
+	limiters sync.Map
 }
 
 type LimitConfig struct {
@@ -29,7 +28,6 @@ type LimitConfig struct {
 
 func (lc LimitConfig) GetKey(r *http.Request) (key string, err error) {
 	err = nil
-
 	switch lc.Zone {
 	case "ip":
 		parts := strings.Split(r.RemoteAddr, ":")
@@ -38,36 +36,24 @@ func (lc LimitConfig) GetKey(r *http.Request) (key string, err error) {
 	default:
 		err = errors.New("rate limit zone is not supported")
 	}
-
 	key = strconv.Itoa(int(lc.Per.Seconds())) + "|" + strconv.Itoa(lc.Requests) + "!" + key
-
 	return
 }
 
 func NewRateLimiter() *RateLimiter {
-	return &RateLimiter{
-		limiters: make(map[string]*rate.Limiter),
-	}
+	return &RateLimiter{}
 }
 
 func (rl *RateLimiter) addLimiter(key string, limit rate.Limit, burst int) {
-	rl.mu.Lock()
-	defer rl.mu.Unlock()
-
 	limiter := rate.NewLimiter(limit, burst)
-	rl.limiters[key] = limiter
+	rl.limiters.Store(key, limiter)
 }
 
 func (rl *RateLimiter) getLimiter(key string) *rate.Limiter {
-	rl.mu.RLock()
-	limiter, exists := rl.limiters[key]
-	rl.mu.RUnlock()
-
-	if !exists {
-		return nil
+	if limiter, ok := rl.limiters.Load(key); ok {
+		return limiter.(*rate.Limiter)
 	}
-
-	return limiter
+	return nil
 }
 
 func ParseLimitConfig(config string) (LimitConfig, error) {
@@ -75,7 +61,6 @@ func ParseLimitConfig(config string) (LimitConfig, error) {
 	if len(parts) != 2 {
 		return LimitConfig{}, fmt.Errorf("invalid limit config: %s", config)
 	}
-
 	zone := parts[0]
 	if !slices.Contains(SupportedZones, strings.ToLower(zone)) {
 		return LimitConfig{}, ErrZoneNotSupported
@@ -92,7 +77,6 @@ func ParseLimitConfig(config string) (LimitConfig, error) {
 	}
 
 	var duration time.Duration
-
 	switch limitParts[1] {
 	case "s":
 		duration = time.Second
@@ -147,7 +131,6 @@ func NewRateLimitMiddleware(limits []string) (func(http.Handler) http.Handler, e
 					return
 				}
 			}
-
 			next.ServeHTTP(w, r)
 		})
 	}, nil
