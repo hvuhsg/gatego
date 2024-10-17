@@ -1,7 +1,6 @@
 package middlewares
 
 import (
-	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -33,7 +32,6 @@ func NewCacheMiddleware() Middleware {
 				}
 				w.WriteHeader(response.statusCode)
 				w.Write(response.body)
-				fmt.Println("Returning cached")
 				return
 			}
 
