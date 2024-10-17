@@ -14,13 +14,13 @@ import (
 )
 
 type MinifyConfig struct {
-	ALL  bool `yaml:"all"`
-	JS   bool `yaml:"js"`
-	CSS  bool `yaml:"css"`
-	HTML bool `yaml:"html"`
-	JSON bool `yaml:"json"`
-	SVG  bool `yaml:"svg"`
-	XML  bool `yaml:"xml"`
+	ALL  bool
+	JS   bool
+	CSS  bool
+	HTML bool
+	JSON bool
+	SVG  bool
+	XML  bool
 }
 
 func NewMinifyMiddleware(config MinifyConfig) Middleware {
