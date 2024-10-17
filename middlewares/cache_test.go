@@ -8,6 +8,7 @@ import (
 )
 
 func TestCacheMiddleware(t *testing.T) {
+	t.Parallel()
 	// Reset cache before each test
 	responseCache.Flush()
 
@@ -166,6 +167,7 @@ func TestCacheMiddleware(t *testing.T) {
 }
 
 func TestGetCacheMaxAge(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name         string
 		cacheControl string
@@ -189,6 +191,8 @@ func TestGetCacheMaxAge(t *testing.T) {
 }
 
 func TestGetCacheExpires(t *testing.T) {
+	t.Parallel()
+
 	now := time.Now()
 	tests := []struct {
 		name          string
