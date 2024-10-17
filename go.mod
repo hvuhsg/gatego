@@ -9,6 +9,8 @@ require (
 	github.com/tdewolff/minify/v2 v2.21.0
 )
 
+require golang.org/x/text v0.19.0 // indirect
+
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/getkin/kin-openapi v0.128.0
@@ -25,5 +27,6 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/stretchr/testify v1.9.0
 	github.com/tdewolff/parse/v2 v2.7.17 // indirect
+	golang.org/x/net v0.30.0
 	golang.org/x/time v0.7.0
 )

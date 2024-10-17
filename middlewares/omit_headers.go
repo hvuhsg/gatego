@@ -9,16 +9,17 @@ func NewOmitHeadersMiddleware(headers []string) func(http.Handler) http.Handler 
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-			rc := NewResponseCapture(w)
+			rc := NewRecorder()
 			next.ServeHTTP(rc, r)
 
 			// Omit headers from response
 			for _, header := range headers {
-				rc.Header().Del(header)
+				rc.Result().Header.Del(header)
 			}
 
-			w.WriteHeader(rc.status)
-			w.Write(rc.buffer.Bytes())
+			rc.WriteHeadersTo(w)
+			w.WriteHeader(rc.Result().StatusCode)
+			w.Write(rc.Body.Bytes())
 		})
 	}
 }

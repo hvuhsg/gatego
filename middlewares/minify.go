@@ -49,26 +49,24 @@ func NewMinifyMiddleware(config MinifyConfig) Middleware {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// Create a custom ResponseWriter to capture the response
-			rw := NewResponseCapture(w)
+			rc := NewRecorder()
 
 			// Serve the next handler
-			next.ServeHTTP(rw, r)
+			next.ServeHTTP(rc, r)
 
 			// Get the content type of the response
-			contentType := rw.Header().Get("Content-Type")
+			contentType := rc.Header().Get("Content-Type")
 
-			minifiedContent, err := m.Bytes(contentType, rw.buffer.Bytes())
+			minifiedContent, err := m.Bytes(contentType, rc.Body.Bytes())
 			if err != nil {
-				rw.Flush() // Return the original response
+				rc.WriteTo(w) // Return the original response
 				return
 			}
 
 			// Write the minified content to the response
 			w.Header().Set("Content-Length", strconv.Itoa(len(minifiedContent)))
-
-			if rw.status > 0 {
-				w.WriteHeader(rw.status)
-			}
+			rc.WriteHeadersTo(w)
+			w.WriteHeader(rc.Result().StatusCode)
 
 			w.Write(minifiedContent)
 		})

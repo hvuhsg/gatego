@@ -18,7 +18,7 @@ var responseCache = cache.New(DEFAULT_CACHE_TTL, CLEANUP_CACHE_INTERVAL) // Defa
 type CachedResponse struct {
 	statusCode int
 	body       []byte
-	headers    map[string]string
+	headers    http.Header
 }
 
 func NewCacheMiddleware() Middleware {
@@ -28,9 +28,8 @@ func NewCacheMiddleware() Middleware {
 			cachedResponse, found := responseCache.Get(r.URL.String())
 			if found {
 				response := cachedResponse.(CachedResponse)
-				// TODO: cache response headers
-				for header, value := range response.headers {
-					w.Header().Set(header, value)
+				for header := range response.headers {
+					w.Header().Set(header, response.headers.Get(header))
 				}
 				w.WriteHeader(response.statusCode)
 				w.Write(response.body)
@@ -39,7 +38,7 @@ func NewCacheMiddleware() Middleware {
 			}
 
 			// Serve the next handler and capture the response
-			rc := NewResponseCapture(w)
+			rc := NewRecorder()
 			next.ServeHTTP(rc, r)
 
 			// Get cache control headers
@@ -57,12 +56,12 @@ func NewCacheMiddleware() Middleware {
 
 			// Cache the response if it's cacheable
 			if ttl > 0 {
-				cachedResponse := CachedResponse{statusCode: rc.status, body: rc.buffer.Bytes()}
+				cachedResponse := CachedResponse{statusCode: rc.Result().StatusCode, body: rc.Body.Bytes(), headers: rc.Result().Header}
 				responseCache.Set(r.URL.String(), cachedResponse, ttl)
 			}
 
 			// Write the captured response (original or cached)
-			rc.Flush()
+			rc.WriteTo(w)
 		})
 	}
 }

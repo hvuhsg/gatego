@@ -45,17 +45,17 @@ func NewOpenAPIValidationMiddleware(specPath string) (Middleware, error) {
 				return
 			}
 
-			rc := NewResponseCapture(w)
+			rc := NewRecorder()
 			next.ServeHTTP(rc, r)
 
 			responseValidationInput := &openapi3filter.ResponseValidationInput{
 				RequestValidationInput: requestValidationInput,
-				Status:                 rc.status,
+				Status:                 rc.Result().StatusCode,
 				Header:                 rc.Header(),
 			}
 
-			if rc.buffer.Bytes() != nil {
-				responseValidationInput.SetBodyBytes(rc.buffer.Bytes())
+			if rc.Body.Bytes() != nil {
+				responseValidationInput.SetBodyBytes(rc.Body.Bytes())
 			}
 
 			if err := openapi3filter.ValidateResponse(r.Context(), responseValidationInput); err != nil {
@@ -63,9 +63,10 @@ func NewOpenAPIValidationMiddleware(specPath string) (Middleware, error) {
 				return
 			}
 
-			w.WriteHeader(rc.status)
-			if rc.buffer.Bytes() != nil {
-				w.Write(rc.buffer.Bytes())
+			rc.WriteHeadersTo(w)
+			w.WriteHeader(rc.Result().StatusCode)
+			if rc.Body.Bytes() != nil {
+				w.Write(rc.Body.Bytes())
 			}
 		})
 	}, nil

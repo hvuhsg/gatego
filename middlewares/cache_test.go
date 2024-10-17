@@ -110,40 +110,40 @@ func TestCacheMiddleware(t *testing.T) {
 		}
 	})
 
-	// t.Run("Should preserve response headers", func(t *testing.T) {
-	// 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-	// 		// Add expiration header
-	// 		expiresTime := time.Now().Add(50 * time.Second)
-	// 		w.Header().Set("Expires", expiresTime.Format(time.RFC1123))
+	t.Run("Should preserve response headers", func(t *testing.T) {
+		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// Add expiration header
+			expiresTime := time.Now().Add(50 * time.Second)
+			w.Header().Set("Expires", expiresTime.Format(time.RFC1123))
 
-	// 		w.Header().Set("Content-Type", "application/json")
-	// 		w.Header().Set("X-Custom-Header", "test-value")
-	// 		w.WriteHeader(200)
-	// 		w.Write([]byte(`{"message":"test"}`))
-	// 	})
+			w.Header().Set("Content-Type", "application/json")
+			w.Header().Set("X-Custom-Header", "test-value")
+			w.WriteHeader(200)
+			w.Write([]byte(`{"message":"test"}`))
+		})
 
-	// 	middleware := NewCacheMiddleware()(handler)
-	// 	req := httptest.NewRequest("GET", "/headers", nil)
+		middleware := NewCacheMiddleware()(handler)
+		req := httptest.NewRequest("GET", "/headers", nil)
 
-	// 	// First request
-	// 	w1 := httptest.NewRecorder()
-	// 	middleware.ServeHTTP(w1, req)
+		// First request
+		w1 := httptest.NewRecorder()
+		middleware.ServeHTTP(w1, req)
 
-	// 	// Second request - should preserve headers
-	// 	w2 := httptest.NewRecorder()
-	// 	middleware.ServeHTTP(w2, req)
+		// Second request - should preserve headers
+		w2 := httptest.NewRecorder()
+		middleware.ServeHTTP(w2, req)
 
-	// 	expectedHeaders := map[string]string{
-	// 		"Content-Type":    "application/json",
-	// 		"X-Custom-Header": "test-value",
-	// 	}
+		expectedHeaders := map[string]string{
+			"Content-Type":    "application/json",
+			"X-Custom-Header": "test-value",
+		}
 
-	// 	for header, expectedValue := range expectedHeaders {
-	// 		if value := w2.Header().Get(header); value != expectedValue {
-	// 			t.Errorf("Expected header %s to be %s, got %s", header, expectedValue, value)
-	// 		}
-	// 	}
-	// })
+		for header, expectedValue := range expectedHeaders {
+			if value := w2.Header().Get(header); value != expectedValue {
+				t.Errorf("Expected header %s to be %s, got %s", header, expectedValue, value)
+			}
+		}
+	})
 
 	t.Run("Should handle invalid cache headers gracefully", func(t *testing.T) {
 		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
