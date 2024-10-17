@@ -96,6 +96,10 @@ func NewHandler(service config.Service, path config.Path) (http.Handler, error) 
 		handlerWithMiddlewares.Add(openapiMiddleware)
 	}
 
+	if path.Cache {
+		handlerWithMiddlewares.Add(middlewares.NewCacheMiddleware())
+	}
+
 	// handlerWithMiddlewares.Add(loggingMiddleware)
 
 	return handlerWithMiddlewares, nil
