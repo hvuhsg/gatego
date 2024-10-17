@@ -37,7 +37,7 @@ func GetBaseHandler(service config.Service, path config.Path) (http.Handler, err
 	}
 }
 
-func BuildHandler(service config.Service, path config.Path) (http.Handler, error) {
+func NewHandler(service config.Service, path config.Path) (http.Handler, error) {
 	handler, err := GetBaseHandler(service, path)
 	if err != nil {
 		return nil, err

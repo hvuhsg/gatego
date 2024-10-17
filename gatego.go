@@ -19,7 +19,7 @@ func New(config config.Config) *GateGo {
 }
 
 func (gg GateGo) Run() error {
-	table, err := buildHandlersTable(gg.config.Services)
+	table, err := NewHandlersTable(gg.config.Services)
 	if err != nil {
 		return err
 	}
