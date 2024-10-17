@@ -24,17 +24,18 @@ func sendRequest() *http.Response {
 	}
 
 	// Create a new POST request with the JSON payload
-	resp, err := http.NewRequest(http.MethodPost, "http://localhost:8004/?name=yoyo", bytes.NewBuffer(jsonData))
+	req, err := http.NewRequest(http.MethodPost, "http://localhost:8004/?name=yoyo", bytes.NewBuffer(jsonData))
 	if err != nil {
 		log.Fatal("Error creating request:", err)
 	}
 
 	// Set the appropriate Content-Type header for JSON
-	resp.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Example", "Noot")
 
 	// Send the POST request
 	client := http.DefaultClient
-	response, err := client.Do(resp)
+	response, err := client.Do(req)
 	if err != nil {
 		log.Fatal("Error sending request:", err)
 	}
