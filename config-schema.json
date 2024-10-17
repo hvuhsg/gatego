@@ -208,6 +208,10 @@
 											}
 										}
 									}
+								},
+								"cache": {
+									"type": "boolean",
+									"description": "Enable caching of response that has cache headers"
 								}
 							},
 							"required": [

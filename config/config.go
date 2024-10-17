@@ -3,6 +3,7 @@ package config
 import (
 	"errors"
 	"fmt"
+	"log"
 	"net"
 	"net/http"
 	"net/url"
@@ -91,6 +92,7 @@ type Path struct {
 	OpenAPI     *string            `yaml:"openapi"`
 	RateLimits  []string           `yaml:"ratelimits"`
 	Checks      []Check            `yaml:"checks"` // Automated checks
+	Cache       bool               `yaml:"cache"`  // Cache responses that has cache headers
 }
 
 func (p Path) validate() error {
@@ -111,6 +113,10 @@ func (p Path) validate() error {
 	if p.Directory != nil {
 		if !isValidDir(*p.Directory) {
 			return errors.New("invalid directory path")
+		}
+
+		if p.Cache {
+			log.Println("[WARNING] Using cache while serving static files is not recommanded")
 		}
 	}
 
