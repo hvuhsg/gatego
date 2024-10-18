@@ -96,6 +96,13 @@
 										"servers"
 									]
 								},
+								"omit_headers": {
+									"type": "array",
+									"description": "List of headers to omit for secrets protection.",
+									"items": {
+										"type": "string"
+									}
+								},
 								"minify": {
 									"type": "array",
 									"items": {
@@ -124,6 +131,87 @@
 								"openapi": {
 									"type": "string",
 									"description": "Path to the OpenAPI specification for request/response validation."
+								},
+								"checks": {
+									"type": "array",
+									"description": "List of health check configurations",
+									"items": {
+										"type": "object",
+										"required": [
+											"name",
+											"cron",
+											"method",
+											"url",
+											"timeout"
+										],
+										"properties": {
+											"name": {
+												"type": "string",
+												"description": "Descriptive name for the health check",
+												"minLength": 1
+											},
+											"cron": {
+												"type": "string",
+												"description": "Cron expression or macro for check frequency",
+												"pattern": "^(@yearly|@annually|@monthly|@weekly|@daily|@hourly|@minutely|([*\\d,-/]+\\s){4}[*\\d,-/]+)$",
+												"examples": [
+													"* * * * *",
+													"@hourly",
+													"@daily",
+													"0 0 * * *"
+												]
+											},
+											"method": {
+												"type": "string",
+												"description": "HTTP method for the health check",
+												"enum": [
+													"GET",
+													"POST",
+													"PUT",
+													"DELETE",
+													"HEAD",
+													"OPTIONS",
+													"PATCH",
+													"CONNECT",
+													"TRACE"
+												]
+											},
+											"url": {
+												"type": "string",
+												"description": "Health check endpoint URL",
+												"format": "uri",
+												"pattern": "^https?://"
+											},
+											"timeout": {
+												"type": "string",
+												"description": "Timeout duration for health check requests",
+												"pattern": "^\\d+[smh]$",
+												"default": "5s",
+												"examples": [
+													"5s",
+													"1m",
+													"1h"
+												]
+											},
+											"headers": {
+												"type": "object",
+												"description": "Custom headers to be sent with the health check request",
+												"additionalProperties": {
+													"type": "string"
+												},
+												"examples": [
+													{
+														"Host": "domain.org",
+														"Authorization": "Bearer abc123"
+													}
+												]
+											}
+										}
+									}
+								},
+								"cache": {
+									"type": "boolean",
+									"description": "Enable caching of response that has cache headers"
 								}
 							},
 							"required": [

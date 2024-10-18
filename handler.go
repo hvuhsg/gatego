@@ -37,7 +37,7 @@ func GetBaseHandler(service config.Service, path config.Path) (http.Handler, err
 	}
 }
 
-func BuildHandler(service config.Service, path config.Path) (http.Handler, error) {
+func NewHandler(service config.Service, path config.Path) (http.Handler, error) {
 	handler, err := GetBaseHandler(service, path)
 	if err != nil {
 		return nil, err
@@ -73,6 +73,10 @@ func BuildHandler(service config.Service, path config.Path) (http.Handler, error
 		handlerWithMiddlewares.Add(middlewares.GzipMiddleware)
 	}
 
+	if len(path.OmitHeaders) > 0 {
+		handlerWithMiddlewares.Add(middlewares.NewOmitHeadersMiddleware(path.OmitHeaders))
+	}
+
 	minifyConfig := middlewares.MinifyConfig{
 		ALL:  slices.Contains(path.Minify, "all"),
 		JS:   slices.Contains(path.Minify, "js"),
@@ -90,6 +94,10 @@ func BuildHandler(service config.Service, path config.Path) (http.Handler, error
 			return nil, err
 		}
 		handlerWithMiddlewares.Add(openapiMiddleware)
+	}
+
+	if path.Cache {
+		handlerWithMiddlewares.Add(middlewares.NewCacheMiddleware())
 	}
 
 	// handlerWithMiddlewares.Add(loggingMiddleware)

@@ -3,7 +3,9 @@ package config
 import (
 	"errors"
 	"fmt"
+	"log"
 	"net"
+	"net/http"
 	"net/url"
 	"os"
 	"regexp"
@@ -13,6 +15,7 @@ import (
 
 	"github.com/hashicorp/go-version"
 	"github.com/hvuhsg/gatego/middlewares"
+	"github.com/hvuhsg/gatego/pkg/cron"
 	"gopkg.in/yaml.v3"
 )
 
@@ -46,18 +49,50 @@ func (b Backend) validate() error {
 	return nil
 }
 
+type Check struct {
+	Name    string            `yaml:"name"`
+	Cron    string            `yaml:"cron"`
+	URL     string            `yaml:"url"`
+	Method  string            `yaml:"method"`
+	Timeout time.Duration     `yaml:"timeout"`
+	Headers map[string]string `yaml:"headers"`
+}
+
+func (c Check) validate() error {
+	if len(c.Name) == 0 {
+		return errors.New("check requires a name")
+	}
+
+	if _, err := cron.NewSchedule(c.Cron); err != nil {
+		return errors.New("invalid check cron expression")
+	}
+
+	if !isValidURL(c.URL) {
+		return errors.New("invalid check url")
+	}
+
+	if !isValidMethod(c.Method) {
+		return errors.New("invalid check method")
+	}
+
+	return nil
+}
+
 type Path struct {
 	Path        string             `yaml:"path"`
 	Destination *string            `yaml:"destination"` // The domain / url of the service server
 	Directory   *string            `yaml:"directory"`   // path to dir you want to serve
 	Backend     *Backend           `yaml:"backend"`     // List of servers to load balance between
 	Headers     *map[string]string `yaml:"headers"`
+	OmitHeaders []string           `yaml:"omit_headers"` // Omit specified headers
 	Minify      []string           `yaml:"minify"`
 	Gzip        *bool              `yaml:"gzip"`
 	Timeout     time.Duration      `yaml:"timeout"`
 	MaxSize     uint64             `yaml:"max_size"`
 	OpenAPI     *string            `yaml:"openapi"`
 	RateLimits  []string           `yaml:"ratelimits"`
+	Checks      []Check            `yaml:"checks"` // Automated checks
+	Cache       bool               `yaml:"cache"`  // Cache responses that has cache headers
 }
 
 func (p Path) validate() error {
@@ -78,6 +113,10 @@ func (p Path) validate() error {
 	if p.Directory != nil {
 		if !isValidDir(*p.Directory) {
 			return errors.New("invalid directory path")
+		}
+
+		if p.Cache {
+			log.Println("[WARNING] Using cache while serving static files is not recommanded")
 		}
 	}
 
@@ -105,6 +144,12 @@ func (p Path) validate() error {
 		_, err := middlewares.ParseLimitConfig(ratelimit)
 		if err != nil {
 			return fmt.Errorf("invalid ratelimit: %s", err.Error())
+		}
+	}
+
+	for _, check := range p.Checks {
+		if err := check.validate(); err != nil {
+			return err
 		}
 	}
 
@@ -255,4 +300,20 @@ func isValidFile(path string) bool {
 		return false
 	}
 	return !fileInfo.IsDir()
+}
+
+func isValidMethod(method string) bool {
+	methods := []string{
+		http.MethodGet,
+		http.MethodHead,
+		http.MethodPost,
+		http.MethodPut,
+		http.MethodPatch,
+		http.MethodDelete,
+		http.MethodConnect,
+		http.MethodOptions,
+		http.MethodTrace,
+	}
+
+	return slices.Contains(methods, method)
 }
