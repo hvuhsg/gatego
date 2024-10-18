@@ -13,16 +13,6 @@ import (
 
 var ErrUnsupportedBaseHandler = errors.New("base handler unsupported")
 
-// func loggingMiddleware(next http.Handler) http.Handler {
-// 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-// 		rc := middlewares.NewResponseCapture(w)
-// 		next.ServeHTTP(rc, r)
-
-// 		w.WriteHeader(rc.Status())
-// 		w.Write(rc.Buffer())
-// 	})
-// }
-
 func GetBaseHandler(service config.Service, path config.Path) (http.Handler, error) {
 	if path.Destination != nil && *path.Destination != "" {
 		return handlers.NewProxy(service, path)
@@ -99,8 +89,6 @@ func NewHandler(service config.Service, path config.Path) (http.Handler, error) 
 	if path.Cache {
 		handlerWithMiddlewares.Add(middlewares.NewCacheMiddleware())
 	}
-
-	// handlerWithMiddlewares.Add(loggingMiddleware)
 
 	return handlerWithMiddlewares, nil
 }
