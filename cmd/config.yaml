@@ -4,6 +4,10 @@ version: '0.0.1'
 host: localhost
 port: 8004
 
+open_telemetry:
+  endpoint: "localhost:4317"
+  sample_ratio: 0.03
+
 services:
   - domain: localhost
     endpoints:

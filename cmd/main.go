@@ -17,7 +17,7 @@ func main() {
 
 	log.Default().Println("Config loaded successfully")
 
-	server := gatego.New(config)
+	server := gatego.New(config, version)
 
 	err = server.Run()
 	if err != nil {
