@@ -32,6 +32,21 @@
 			],
 			"description": "SSL configuration for the server."
 		},
+		"open_telemetry": {
+			"type": "object",
+			"properties": {
+				"endpoint": {
+					"type": "string",
+					"description": "GRPC connection string for open telemetry collection agent"
+				},
+				"sample_ratio": {
+					"type":"number",
+					"exclusiveMinimum": 0,
+					"maximum": 1
+				}
+			},
+			"required": ["sample_ratio", "endpoint"]
+		},
 		"services": {
 			"type": "array",
 			"items": {

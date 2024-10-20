@@ -144,6 +144,10 @@ ssl:
   keyfile: /path/to/your/ssl/keyfile
   certfile: /path/to/your/ssl/certfile
 
+open_telemetry:
+  endpoint: "localhost:4317"
+  sample_ratio: 0.01  # == 1%
+
 services:
   - domain: your-domain.com
     endpoints:
