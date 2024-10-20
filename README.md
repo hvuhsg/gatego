@@ -131,6 +131,17 @@ The server supports automated health checks for backend services. You can config
         Authorization: "Bearer abc123"
 ```
 
+### 8. OpenTelemetry Integration
+The server includes built-in support for OpenTelemetry, enabling comprehensive observability through distributed tracing, metrics, and logging. This integration helps monitor application performance, troubleshoot issues, and understand system behavior in distributed environments.
+
+```yaml
+version: '...'
+
+open_telemetry:
+  endpoint: "localhost:4317"
+  sample_ratio: 0.01  # == 1%
+```
+
 ## Configuration Example
 
 Here’s a generic example of how you can configure the reverse proxy:
@@ -143,6 +154,10 @@ port: your-port
 ssl:
   keyfile: /path/to/your/ssl/keyfile
   certfile: /path/to/your/ssl/certfile
+
+open_telemetry:
+  endpoint: "localhost:4317"
+  sample_ratio: 0.01  # == 1%
 
 services:
   - domain: your-domain.com

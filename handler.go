@@ -1,6 +1,7 @@
 package gatego
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"os"
@@ -12,16 +13,6 @@ import (
 )
 
 var ErrUnsupportedBaseHandler = errors.New("base handler unsupported")
-
-// func loggingMiddleware(next http.Handler) http.Handler {
-// 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-// 		rc := middlewares.NewResponseCapture(w)
-// 		next.ServeHTTP(rc, r)
-
-// 		w.WriteHeader(rc.Status())
-// 		w.Write(rc.Buffer())
-// 	})
-// }
 
 func GetBaseHandler(service config.Service, path config.Path) (http.Handler, error) {
 	if path.Destination != nil && *path.Destination != "" {
@@ -37,7 +28,7 @@ func GetBaseHandler(service config.Service, path config.Path) (http.Handler, err
 	}
 }
 
-func NewHandler(service config.Service, path config.Path) (http.Handler, error) {
+func NewHandler(ctx context.Context, otel *config.OTEL, service config.Service, path config.Path) (http.Handler, error) {
 	handler, err := GetBaseHandler(service, path)
 	if err != nil {
 		return nil, err
@@ -47,16 +38,37 @@ func NewHandler(service config.Service, path config.Path) (http.Handler, error) 
 
 	handlerWithMiddlewares.Add(middlewares.NewLoggingMiddleware(os.Stdout))
 
+	// Open Telemetry
+	if otel != nil {
+		otelMiddleware, err := middlewares.NewOpenTelemetryMiddleware(
+			ctx,
+			middlewares.OTELConfig{
+				ServiceVersion: ctx.Value("version").(string),
+				Endpoint:       otel.Endpoint,
+				ServiceDomain:  service.Domain,
+				BasePath:       path.Path,
+				SampleRatio:    otel.SampleRatio,
+			},
+		)
+		if err != nil {
+			return nil, err
+		}
+		handlerWithMiddlewares.Add(otelMiddleware)
+	}
+
+	// Timeout
 	if path.Timeout == 0 {
 		path.Timeout = config.DefaultTimeout
 	}
 	handlerWithMiddlewares.Add(middlewares.NewTimeoutMiddleware(path.Timeout))
 
+	// Max request size
 	if path.MaxSize == 0 {
 		path.MaxSize = config.DefaultMaxRequestSize
 	}
 	handlerWithMiddlewares.Add(middlewares.NewRequestSizeLimitMiddleware(path.MaxSize))
 
+	// Rate limits
 	if len(path.RateLimits) > 0 {
 		ratelimiter, err := middlewares.NewRateLimitMiddleware(path.RateLimits)
 		if err != nil {
@@ -65,18 +77,22 @@ func NewHandler(service config.Service, path config.Path) (http.Handler, error) 
 		handlerWithMiddlewares.Add(ratelimiter)
 	}
 
+	// Add headers
 	if path.Headers != nil {
 		handlerWithMiddlewares.Add(middlewares.NewAddHeadersMiddleware(*path.Headers))
 	}
 
+	// GZIP compression
 	if path.Gzip != nil && *path.Gzip {
 		handlerWithMiddlewares.Add(middlewares.GzipMiddleware)
 	}
 
+	// Remove response headers
 	if len(path.OmitHeaders) > 0 {
 		handlerWithMiddlewares.Add(middlewares.NewOmitHeadersMiddleware(path.OmitHeaders))
 	}
 
+	// Minify files
 	minifyConfig := middlewares.MinifyConfig{
 		ALL:  slices.Contains(path.Minify, "all"),
 		JS:   slices.Contains(path.Minify, "js"),
@@ -88,6 +104,7 @@ func NewHandler(service config.Service, path config.Path) (http.Handler, error) 
 	}
 	handlerWithMiddlewares.Add(middlewares.NewMinifyMiddleware(minifyConfig))
 
+	// OpenAPI validation
 	if path.OpenAPI != nil {
 		openapiMiddleware, err := middlewares.NewOpenAPIValidationMiddleware(*path.OpenAPI)
 		if err != nil {
@@ -96,11 +113,10 @@ func NewHandler(service config.Service, path config.Path) (http.Handler, error) 
 		handlerWithMiddlewares.Add(openapiMiddleware)
 	}
 
+	// Response cache
 	if path.Cache {
 		handlerWithMiddlewares.Add(middlewares.NewCacheMiddleware())
 	}
-
-	// handlerWithMiddlewares.Add(loggingMiddleware)
 
 	return handlerWithMiddlewares, nil
 }
