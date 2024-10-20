@@ -1,6 +1,7 @@
 package gatego
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
@@ -12,14 +13,17 @@ import (
 
 type GateGo struct {
 	config config.Config
+	ctx    context.Context
 }
 
-func New(config config.Config) *GateGo {
-	return &GateGo{config: config}
+func New(config config.Config, version string) *GateGo {
+	ctx := context.Background()
+	ctx = context.WithValue(ctx, "version", version)
+	return &GateGo{config: config, ctx: ctx}
 }
 
 func (gg GateGo) Run() error {
-	table, err := NewHandlersTable(gg.config.Services)
+	table, err := NewHandlersTable(gg.ctx, gg.config.OTEL, gg.config.Services)
 	if err != nil {
 		return err
 	}
