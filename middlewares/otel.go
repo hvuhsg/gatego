@@ -37,7 +37,7 @@ func NewOpenTelemetryMiddleware(ctx context.Context, config OTELConfig) (Middlew
 	// Connection security option
 	securityOpt := otlptracegrpc.WithInsecure()
 	if config.Credentials != nil {
-		securityOpt = otlptracegrpc.WithTLSCredentials(config.Credentials)
+		securityOpt = otlptracegrpc.WithTLSCredentials(config.Credentials) // TODO: allow creds
 	}
 
 	exporter, err := otlptrace.New(
