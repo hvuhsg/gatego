@@ -62,7 +62,7 @@ func NewOpenTelemetryMiddleware(ctx context.Context, config OTELConfig) (Middlew
 	tp := sdktrace.NewTracerProvider(
 		sdktrace.WithBatcher(exporter),
 		sdktrace.WithResource(resource),
-		sdktrace.WithSampler(sdktrace.TraceIDRatioBased(config.SampleRatio)), // Just for testing
+		sdktrace.WithSampler(sdktrace.TraceIDRatioBased(config.SampleRatio)),
 	)
 	otel.SetTracerProvider(tp)
 
