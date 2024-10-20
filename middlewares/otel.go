@@ -81,11 +81,11 @@ func NewOpenTelemetryMiddleware(ctx context.Context, config OTELConfig) (Middlew
 			defer span.End()
 
 			// Add request-specific attributes
+			attrs := make([]attribute.KeyValue, 0)
+			attrs = append(attrs, semconv.HTTPUserAgentKey.String(r.UserAgent()))
+			attrs = append(attrs, semconv.HTTPServerAttributesFromHTTPRequest(config.ServiceDomain, config.BasePath, r)...)
 			span.SetAttributes(
-				semconv.HTTPUserAgentKey.String(r.UserAgent()),
-			)
-			span.SetAttributes(
-				semconv.HTTPServerAttributesFromHTTPRequest(config.ServiceDomain, config.BasePath, r)...,
+				attrs...,
 			)
 
 			// Handle panic recovery
@@ -118,9 +118,6 @@ func NewOpenTelemetryMiddleware(ctx context.Context, config OTELConfig) (Middlew
 				attribute.Int64("http.response_size", rc.Result().ContentLength),
 				attribute.String("http.response_content_type", rc.Result().Header.Get("Content-Type")),
 			)
-
-			// Add trace context to response headers
-			w.Header().Set("X-Trace-ID", span.SpanContext().TraceID().String())
 
 			// Return response
 			rc.WriteTo(w)
