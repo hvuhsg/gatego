@@ -4,74 +4,34 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"time"
 
+	"github.com/hvuhsg/gatego/contextvalues"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
-	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
-	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
-	"go.opentelemetry.io/otel/sdk/resource"
-	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+	"go.opentelemetry.io/otel/propagation"
 	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 	"go.opentelemetry.io/otel/trace"
-	"google.golang.org/grpc/credentials"
 )
 
-const (
-	serviceName    = "gatego"
-	spanPrefix     = "gatego"
-	defaultTimeout = 5 * time.Second
-)
+const tracerName = "request"
+const spanName = "middlewares"
 
 type OTELConfig struct {
-	ServiceVersion string
-	Endpoint       string // OTLP gRPC endpoint
-	SampleRatio    float64
-	Credentials    credentials.TransportCredentials
-	ServiceDomain  string
-	BasePath       string
+	ServiceDomain string
+	BasePath      string
 }
 
 func NewOpenTelemetryMiddleware(ctx context.Context, config OTELConfig) (Middleware, error) {
-	// Connection security option
-	securityOpt := otlptracegrpc.WithInsecure()
-	if config.Credentials != nil {
-		securityOpt = otlptracegrpc.WithTLSCredentials(config.Credentials) // TODO: allow creds
-	}
-
-	exporter, err := otlptrace.New(
-		context.Background(),
-		otlptracegrpc.NewClient(
-			otlptracegrpc.WithEndpoint(config.Endpoint), // OTLP gRPC endpoint
-			securityOpt,
-			otlptracegrpc.WithTimeout(defaultTimeout),
-		),
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	resource := resource.NewWithAttributes(
-		semconv.SchemaURL,
-		semconv.ServiceNameKey.String(serviceName),
-		semconv.TelemetrySDKLanguageGo,
-		attribute.String("version", config.ServiceVersion),
-	)
-
-	tp := sdktrace.NewTracerProvider(
-		sdktrace.WithBatcher(exporter),
-		sdktrace.WithResource(resource),
-		sdktrace.WithSampler(sdktrace.TraceIDRatioBased(config.SampleRatio)),
-	)
-	otel.SetTracerProvider(tp)
-
-	tracer := tp.Tracer(serviceName)
+	tp := otel.GetTracerProvider()
+	tracer := tp.Tracer(tracerName)
 
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// Add tracer to request context
+			r = r.WithContext(contextvalues.AddTracerToContext(r.Context(), tracer))
+
 			// Create span for request
-			spanName := fmt.Sprintf("%s_%s_%s", spanPrefix, r.Method, r.URL.Path)
 			ctx, span := tracer.Start(
 				r.Context(),
 				spanName,
@@ -96,6 +56,9 @@ func NewOpenTelemetryMiddleware(ctx context.Context, config OTELConfig) (Middlew
 					panic(err) // Re-panic after recording error
 				}
 			}()
+
+			// Propegate open telemetry context via the request to the upstream service
+			otel.GetTextMapPropagator().Inject(r.Context(), propagation.HeaderCarrier(r.Header))
 
 			// Add span to request context
 			rc := NewRecorder()
