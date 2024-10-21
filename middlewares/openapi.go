@@ -7,6 +7,7 @@ import (
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/getkin/kin-openapi/openapi3filter"
 	"github.com/getkin/kin-openapi/routers/gorillamux"
+	"go.opentelemetry.io/otel/trace"
 )
 
 func NewOpenAPIValidationMiddleware(specPath string) (Middleware, error) {
@@ -27,8 +28,11 @@ func NewOpenAPIValidationMiddleware(specPath string) (Middleware, error) {
 
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			span := trace.SpanFromContext(r.Context())
+
 			route, pathParams, err := router.FindRoute(r)
 			if err != nil {
+				span.AddEvent("Request path not found in openapi spec")
 				http.Error(w, fmt.Sprintf("Error finding route: %v", err), http.StatusBadRequest)
 				return
 			}
@@ -40,10 +44,12 @@ func NewOpenAPIValidationMiddleware(specPath string) (Middleware, error) {
 			}
 
 			if err := openapi3filter.ValidateRequest(r.Context(), requestValidationInput); err != nil {
-				fmt.Println("invalid request", err)
+				span.AddEvent(fmt.Sprintf("Error while validating request with openapi spec. err = %v", err))
 				http.Error(w, fmt.Sprintf("Invalid request: %v", err), http.StatusBadRequest)
 				return
 			}
+
+			span.AddEvent("Request validated by openapi spec")
 
 			rc := NewRecorder()
 			next.ServeHTTP(rc, r)
@@ -59,9 +65,12 @@ func NewOpenAPIValidationMiddleware(specPath string) (Middleware, error) {
 			}
 
 			if err := openapi3filter.ValidateResponse(r.Context(), responseValidationInput); err != nil {
+				span.AddEvent(fmt.Sprintf("Error while validating response with openapi spec. err = %v", err))
 				http.Error(w, fmt.Sprintf("Invalid response: %v", err), http.StatusInternalServerError)
 				return
 			}
+
+			span.AddEvent("Response validated by openapi spec")
 
 			rc.WriteHeadersTo(w)
 			w.WriteHeader(rc.Result().StatusCode)

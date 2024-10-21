@@ -10,6 +10,7 @@ import (
 	"os"
 	"regexp"
 	"slices"
+	"strconv"
 	"strings"
 	"time"
 
@@ -181,10 +182,39 @@ type TLS struct {
 	CertFile *string `yaml:"certfile"`
 }
 
+type OTEL struct {
+	Endpoint    string  `yaml:"endpoint"`
+	SampleRatio float64 `yaml:"sample_ratio"`
+}
+
+func (otel OTEL) validate() error {
+	if len(otel.Endpoint) > 0 {
+		if err := isValidGRPCAddress(otel.Endpoint); err != nil {
+			return err
+		}
+	}
+
+	if otel.SampleRatio < 0 {
+		return errors.New("OpenTelemetry sample ratio MUST be above 0")
+	}
+
+	if otel.SampleRatio == 0 {
+		return errors.New("OpenTelemetry sample ratio is missing or equales to 0")
+	}
+
+	if otel.SampleRatio > 1 {
+		return errors.New("OpenTelemetry sample ratio CAN NOT be above 1")
+	}
+
+	return nil
+}
+
 type Config struct {
 	Version string `yaml:"version"`
 	Host    string `yaml:"host"` // listen host
 	Port    uint16 `yaml:"port"` // listen port
+
+	OTEL *OTEL `yaml:"open_telemetry"`
 
 	// TLS options
 	SSL TLS `yaml:"ssl"`
@@ -209,6 +239,12 @@ func (c Config) Validate(currentVersion string) error {
 
 	if c.Host == "" {
 		return errors.New("host is required")
+	}
+
+	if c.OTEL != nil {
+		if err := (*c.OTEL).validate(); err != nil {
+			return err
+		}
 	}
 
 	for _, service := range c.Services {
@@ -317,4 +353,56 @@ func isValidMethod(method string) bool {
 	}
 
 	return slices.Contains(methods, method)
+}
+
+func isValidGRPCAddress(address string) error {
+	if address == "" {
+		return fmt.Errorf("address cannot be empty")
+	}
+
+	// Split host and port
+	host, portStr, err := net.SplitHostPort(address)
+	if err != nil {
+		return fmt.Errorf("invalid address format: %v", err)
+	}
+
+	// Validate port
+	port, err := strconv.Atoi(portStr)
+	if err != nil {
+		return fmt.Errorf("invalid port number: %v", err)
+	}
+	if port < 1 || port > 65535 {
+		return fmt.Errorf("port number must be between 1 and 65535")
+	}
+
+	// Empty host means localhost/0.0.0.0, which is valid
+	if host == "" {
+		return nil
+	}
+
+	// Check if host is IPv4 or IPv6
+	if ip := net.ParseIP(host); ip != nil {
+		return nil
+	}
+
+	// Validate hostname format
+	hostnameRegex := regexp.MustCompile(`^[a-zA-Z0-9]([a-zA-Z0-9\-\.]*[a-zA-Z0-9])?$`)
+	if !hostnameRegex.MatchString(host) {
+		return fmt.Errorf("invalid hostname format")
+	}
+
+	// Check hostname length
+	if len(host) > 253 {
+		return fmt.Errorf("hostname too long")
+	}
+
+	// Validate hostname parts
+	parts := strings.Split(host, ".")
+	for _, part := range parts {
+		if len(part) > 63 {
+			return fmt.Errorf("hostname label too long")
+		}
+	}
+
+	return nil
 }

@@ -20,9 +20,8 @@ func GzipMiddleware(next http.Handler) http.Handler {
 		gzipWriter := gzip.NewWriter(w)
 		defer gzipWriter.Close()
 
-		rc := NewRecorder()
-
 		// Serve the next handler, writing the response into the ResponseCapture
+		rc := NewRecorder()
 		next.ServeHTTP(rc, r)
 
 		rc.WriteHeadersTo(w)
@@ -31,6 +30,7 @@ func GzipMiddleware(next http.Handler) http.Handler {
 		w.Header().Set("Content-Encoding", "gzip") // Set Content-Encoding header
 
 		w.WriteHeader(rc.Result().StatusCode)
+
 		gzipWriter.Write(rc.Body.Bytes())
 	})
 }

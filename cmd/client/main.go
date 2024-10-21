@@ -31,7 +31,6 @@ func sendRequest() *http.Response {
 
 	// Set the appropriate Content-Type header for JSON
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Example", "Noot")
 
 	// Send the POST request
 	client := http.DefaultClient

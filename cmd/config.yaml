@@ -4,6 +4,10 @@ version: '0.0.1'
 host: localhost
 port: 8004
 
+open_telemetry:
+  endpoint: "localhost:4317"
+  sample_ratio: 1
+
 services:
   - domain: localhost
     endpoints:
@@ -44,3 +48,5 @@ services:
               echo Health check '$check_name' failed at $date with error: $error
         
         omit_headers: [Authorization, X-API-Key, X-Secret-Token]
+
+        cache: true
