@@ -1,6 +1,7 @@
 package middlewares
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -11,6 +12,7 @@ import (
 	"github.com/tdewolff/minify/v2/json"
 	"github.com/tdewolff/minify/v2/svg"
 	"github.com/tdewolff/minify/v2/xml"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type MinifyConfig struct {
@@ -48,6 +50,8 @@ func NewMinifyMiddleware(config MinifyConfig) Middleware {
 
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			span := trace.SpanFromContext(r.Context())
+
 			// Create a custom ResponseWriter to capture the response
 			rc := NewRecorder()
 
@@ -62,6 +66,8 @@ func NewMinifyMiddleware(config MinifyConfig) Middleware {
 				rc.WriteTo(w) // Return the original response
 				return
 			}
+
+			span.AddEvent(fmt.Sprintf("Minified response content, content-type = %s", contentType))
 
 			// Write the minified content to the response
 			w.Header().Set("Content-Length", strconv.Itoa(len(minifiedContent)))

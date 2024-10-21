@@ -28,7 +28,7 @@ func GetBaseHandler(service config.Service, path config.Path) (http.Handler, err
 	}
 }
 
-func NewHandler(ctx context.Context, otel *config.OTEL, service config.Service, path config.Path) (http.Handler, error) {
+func NewHandler(ctx context.Context, useOtel bool, service config.Service, path config.Path) (http.Handler, error) {
 	handler, err := GetBaseHandler(service, path)
 	if err != nil {
 		return nil, err
@@ -39,15 +39,12 @@ func NewHandler(ctx context.Context, otel *config.OTEL, service config.Service, 
 	handlerWithMiddlewares.Add(middlewares.NewLoggingMiddleware(os.Stdout))
 
 	// Open Telemetry
-	if otel != nil {
+	if useOtel {
 		otelMiddleware, err := middlewares.NewOpenTelemetryMiddleware(
 			ctx,
 			middlewares.OTELConfig{
-				ServiceVersion: ctx.Value("version").(string),
-				Endpoint:       otel.Endpoint,
-				ServiceDomain:  service.Domain,
-				BasePath:       path.Path,
-				SampleRatio:    otel.SampleRatio,
+				ServiceDomain: service.Domain,
+				BasePath:      path.Path,
 			},
 		)
 		if err != nil {

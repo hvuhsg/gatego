@@ -4,6 +4,8 @@ import (
 	"context"
 	"net/http"
 	"time"
+
+	"go.opentelemetry.io/otel/trace"
 )
 
 // NewTimeoutMiddleware returns an HTTP handler that wraps the provided handler with a timeout.
@@ -11,6 +13,8 @@ import (
 func NewTimeoutMiddleware(timeout time.Duration) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			span := trace.SpanFromContext(r.Context())
+
 			// Create a context with the specified timeout
 			ctx, cancel := context.WithTimeout(r.Context(), timeout)
 			defer cancel() // Make sure to cancel the context when done
@@ -32,6 +36,7 @@ func NewTimeoutMiddleware(timeout time.Duration) func(next http.Handler) http.Ha
 			case <-ctx.Done():
 				// If the context is canceled (due to timeout), return an error response
 				if ctx.Err() == context.DeadlineExceeded {
+					span.AddEvent("Request timed out")
 					http.Error(w, "Request timed out", http.StatusGatewayTimeout)
 				}
 			case <-done:
