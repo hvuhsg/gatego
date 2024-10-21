@@ -196,6 +196,8 @@ services:
               Host: domain.org
               Authorization: "Bearer abc123"
             # on_failure options will be added in the future
+            on_failure: |
+              echo Health check failed at $date_utc due to: $error                
         
         cache: true  # Cache responses that has cache headers (Cache-Control and Expire)
 

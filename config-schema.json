@@ -205,6 +205,13 @@
 														"Authorization": "Bearer abc123"
 													}
 												]
+											},
+											"on_failure": {
+												"type": "string",
+												"description": "Shell command to execute if the health check fails. Supports variable expansion: $date, $error, and $check_name.",
+												"examples": [
+													"echo Health check '$check_name' failed at $date with error: $error"
+												]
 											}
 										}
 									}
