@@ -188,7 +188,7 @@ services:
         
         openapi: /path/to/openapi.yaml  # OpenAPI file for request/response validation
 
-        omit_headers: [Authorization, X-API-Key, X-Secret-Token]  # Omit response headers
+        omit_headers: [Server]  # Omit response headers
 
         checks:
           - name: "Health Check"

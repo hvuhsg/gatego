@@ -118,6 +118,13 @@
 										"type": "string"
 									}
 								},
+								"headers": {
+									"type": "array",
+									"description": "List of headers to add to request.",
+									"items": {
+										"type": "string"
+									}
+								},
 								"minify": {
 									"type": "array",
 									"items": {

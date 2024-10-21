@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/patrickmn/go-cache"
+	"go.opentelemetry.io/otel/trace"
 )
 
 const DEFAULT_CACHE_TTL = time.Minute * 1
@@ -23,9 +24,12 @@ type CachedResponse struct {
 func NewCacheMiddleware() Middleware {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			span := trace.SpanFromContext(r.Context())
+
 			// Check if response  response is already cached
 			cachedResponse, found := responseCache.Get(r.URL.String())
 			if found {
+				span.AddEvent("Cache hit")
 				response := cachedResponse.(CachedResponse)
 				for header := range response.headers {
 					w.Header().Set(header, response.headers.Get(header))
@@ -56,6 +60,7 @@ func NewCacheMiddleware() Middleware {
 			if ttl > 0 {
 				cachedResponse := CachedResponse{statusCode: rc.Result().StatusCode, body: rc.Body.Bytes(), headers: rc.Result().Header}
 				responseCache.Set(r.URL.String(), cachedResponse, ttl)
+				span.AddEvent("Response stored in cache")
 			}
 
 			// Write the captured response (original or cached)

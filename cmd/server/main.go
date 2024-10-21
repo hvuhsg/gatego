@@ -12,7 +12,7 @@ func main() {
 	server.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Printf("%s, %s, %s, %v\n", r.Proto, r.Host, r.URL, r.Header)
 		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(209)
+		w.WriteHeader(200)
 		w.Write([]byte(`{ "hello" : 1.5 , "good" : true }`))
 	})
 
