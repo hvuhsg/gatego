@@ -4,6 +4,10 @@ version: '0.0.1'
 host: localhost
 port: 8004
 
+open_telemetry:
+  endpoint: "localhost:4317"
+  sample_ratio: 1
+
 services:
   - domain: localhost
     endpoints:
@@ -42,3 +46,5 @@ services:
               Authorization: "Bearer abc123"
         
         omit_headers: [Authorization, X-API-Key, X-Secret-Token]
+
+        cache: true

@@ -1,6 +1,7 @@
 package gatego
 
 import (
+	"context"
 	"net/http"
 	"strings"
 
@@ -14,7 +15,7 @@ func cleanDomain(domain string) string {
 	return removePort(strings.ToLower(domain))
 }
 
-func NewHandlersTable(servicesConfig []config.Service) (HandlerTable, error) {
+func NewHandlersTable(ctx context.Context, useOtel bool, servicesConfig []config.Service) (HandlerTable, error) {
 	servers := make(map[string]*pathtree.Trie[http.Handler])
 
 	for _, service := range servicesConfig {
@@ -25,7 +26,7 @@ func NewHandlersTable(servicesConfig []config.Service) (HandlerTable, error) {
 		servers[cleanedDomain] = servicePathTree
 
 		for _, path := range service.Paths {
-			handler, err := NewHandler(service, path)
+			handler, err := NewHandler(ctx, useOtel, service, path)
 			if err != nil {
 				return nil, err
 			}

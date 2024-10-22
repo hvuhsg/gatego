@@ -1,6 +1,7 @@
 package gatego
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"os"
@@ -27,7 +28,7 @@ func GetBaseHandler(service config.Service, path config.Path) (http.Handler, err
 	}
 }
 
-func NewHandler(service config.Service, path config.Path) (http.Handler, error) {
+func NewHandler(ctx context.Context, useOtel bool, service config.Service, path config.Path) (http.Handler, error) {
 	handler, err := GetBaseHandler(service, path)
 	if err != nil {
 		return nil, err
@@ -37,16 +38,34 @@ func NewHandler(service config.Service, path config.Path) (http.Handler, error) 
 
 	handlerWithMiddlewares.Add(middlewares.NewLoggingMiddleware(os.Stdout))
 
+	// Open Telemetry
+	if useOtel {
+		otelMiddleware, err := middlewares.NewOpenTelemetryMiddleware(
+			ctx,
+			middlewares.OTELConfig{
+				ServiceDomain: service.Domain,
+				BasePath:      path.Path,
+			},
+		)
+		if err != nil {
+			return nil, err
+		}
+		handlerWithMiddlewares.Add(otelMiddleware)
+	}
+
+	// Timeout
 	if path.Timeout == 0 {
 		path.Timeout = config.DefaultTimeout
 	}
 	handlerWithMiddlewares.Add(middlewares.NewTimeoutMiddleware(path.Timeout))
 
+	// Max request size
 	if path.MaxSize == 0 {
 		path.MaxSize = config.DefaultMaxRequestSize
 	}
 	handlerWithMiddlewares.Add(middlewares.NewRequestSizeLimitMiddleware(path.MaxSize))
 
+	// Rate limits
 	if len(path.RateLimits) > 0 {
 		ratelimiter, err := middlewares.NewRateLimitMiddleware(path.RateLimits)
 		if err != nil {
@@ -55,18 +74,22 @@ func NewHandler(service config.Service, path config.Path) (http.Handler, error) 
 		handlerWithMiddlewares.Add(ratelimiter)
 	}
 
+	// Add headers
 	if path.Headers != nil {
 		handlerWithMiddlewares.Add(middlewares.NewAddHeadersMiddleware(*path.Headers))
 	}
 
+	// GZIP compression
 	if path.Gzip != nil && *path.Gzip {
 		handlerWithMiddlewares.Add(middlewares.GzipMiddleware)
 	}
 
+	// Remove response headers
 	if len(path.OmitHeaders) > 0 {
 		handlerWithMiddlewares.Add(middlewares.NewOmitHeadersMiddleware(path.OmitHeaders))
 	}
 
+	// Minify files
 	minifyConfig := middlewares.MinifyConfig{
 		ALL:  slices.Contains(path.Minify, "all"),
 		JS:   slices.Contains(path.Minify, "js"),
@@ -78,6 +101,7 @@ func NewHandler(service config.Service, path config.Path) (http.Handler, error) 
 	}
 	handlerWithMiddlewares.Add(middlewares.NewMinifyMiddleware(minifyConfig))
 
+	// OpenAPI validation
 	if path.OpenAPI != nil {
 		openapiMiddleware, err := middlewares.NewOpenAPIValidationMiddleware(*path.OpenAPI)
 		if err != nil {
@@ -86,6 +110,7 @@ func NewHandler(service config.Service, path config.Path) (http.Handler, error) 
 		handlerWithMiddlewares.Add(openapiMiddleware)
 	}
 
+	// Response cache
 	if path.Cache {
 		handlerWithMiddlewares.Add(middlewares.NewCacheMiddleware())
 	}
