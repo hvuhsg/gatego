@@ -177,8 +177,44 @@ func (s Service) validate() error {
 }
 
 type TLS struct {
-	KeyFile  *string `yaml:"keyfile"`
-	CertFile *string `yaml:"certfile"`
+	Auto     bool     `yaml:"auto"`
+	Domains  []string `yaml:"domain"`
+	Email    *string  `yaml:"email"`
+	KeyFile  *string  `yaml:"keyfile"`
+	CertFile *string  `yaml:"certfile"`
+}
+
+func (tls TLS) validate() error {
+	if tls.Auto {
+		if len(tls.Domains) == 0 {
+			return errors.New("when using the auto tls feature you MUST include a list of domains to issue certificates for")
+		}
+		if tls.Email == nil || len(*tls.Email) == 0 || !isValidEmail(*tls.Email) {
+			return errors.New("when using the auto tls feature you MUST include a valid email for the lets-encrypt registration")
+		}
+	}
+
+	if tls.CertFile != nil {
+		if tls.KeyFile == nil {
+			return errors.New("you MUST provide certfile AND keyfile")
+		}
+	}
+
+	if tls.KeyFile != nil {
+		if tls.CertFile == nil {
+			return errors.New("you MUST provide certfile AND keyfile")
+		}
+
+		if !isValidFile(*tls.CertFile) {
+			return errors.New("certfile path is invalid")
+		}
+
+		if !isValidFile(*tls.KeyFile) {
+			return errors.New("keyfile path is invalid")
+		}
+	}
+
+	return nil
 }
 
 type OTEL struct {
@@ -216,7 +252,7 @@ type Config struct {
 	OTEL *OTEL `yaml:"open_telemetry"`
 
 	// TLS options
-	SSL TLS `yaml:"ssl"`
+	TLS TLS `yaml:"ssl"`
 
 	Services []Service `yaml:"services"`
 }
@@ -244,6 +280,18 @@ func (c Config) Validate(currentVersion string) error {
 		if err := (*c.OTEL).validate(); err != nil {
 			return err
 		}
+	}
+
+	if c.Port == 0 {
+		return errors.New("port is required")
+	}
+
+	if err := c.TLS.validate(); err != nil {
+		return err
+	}
+
+	if c.TLS.Auto && c.Port != 443 {
+		return errors.New("the auto tls feature is only available if the server runs on port 443")
 	}
 
 	for _, service := range c.Services {
@@ -404,4 +452,12 @@ func isValidGRPCAddress(address string) error {
 	}
 
 	return nil
+}
+
+func isValidEmail(email string) bool {
+	// Define a regular expression for valid email addresses
+	var emailRegex = regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
+
+	// Match the email string with the regular expression
+	return emailRegex.MatchString(email)
 }
