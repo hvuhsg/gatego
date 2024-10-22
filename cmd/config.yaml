@@ -44,6 +44,8 @@ services:
             headers:
               Host: domain.org
               Authorization: "Bearer abc123"
+            on_failure: |
+              echo Health check '$check_name' failed at $date with error: $error
         
         omit_headers: [Authorization, X-API-Key, X-Secret-Token]
 

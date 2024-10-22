@@ -210,8 +210,10 @@ services:
             headers:
               Host: domain.org
               Authorization: "Bearer abc123"
-            # on_failure options will be added in the future
-        
+
+            # on_failure runs a shell command if the check fails. Expands $date, $error, $check_name.
+            on_failure: |
+              curl -d "Health check '$check_name' failed at $date due to: $error" ntfy.sh/gatego
         cache: true  # Cache responses that has cache headers (Cache-Control and Expire)
 
 ```
