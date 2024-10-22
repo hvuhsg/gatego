@@ -1,4 +1,4 @@
-package gatego
+package monitor
 
 import (
 	"fmt"
@@ -77,17 +77,21 @@ func handleFailure(check Check, err error) error {
 	return nil
 }
 
-type Checker struct {
+type Monitor struct {
 	Delay     time.Duration
 	Checks    []Check
 	scheduler *cron.Cron
 }
 
-func (c Checker) Start() error {
-	c.scheduler = cron.New()
+func New(delay time.Duration, checks ...Check) *Monitor {
+	return &Monitor{Delay: delay, Checks: checks, scheduler: cron.New()}
+}
 
-	for _, check := range c.Checks {
-		err := c.scheduler.Add(uuid.NewString(), check.Cron, check.run(func(err error) {
+func (m Monitor) Start() error {
+	m.scheduler = cron.New()
+
+	for _, check := range m.Checks {
+		err := m.scheduler.Add(uuid.NewString(), check.Cron, check.run(func(err error) {
 			if check.OnFailure != "" {
 				if err := handleFailure(check, err); err != nil {
 					log.Default().Printf("Failed to spawn on_failure command: %s\n", err)
@@ -100,8 +104,8 @@ func (c Checker) Start() error {
 	}
 
 	go func() {
-		time.Sleep(c.Delay)
-		c.scheduler.Start()
+		time.Sleep(m.Delay)
+		m.scheduler.Start()
 		log.Default().Println("Started running automated checks.")
 	}()
 
