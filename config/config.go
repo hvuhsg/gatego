@@ -51,12 +51,13 @@ func (b Backend) validate() error {
 }
 
 type Check struct {
-	Name    string            `yaml:"name"`
-	Cron    string            `yaml:"cron"`
-	URL     string            `yaml:"url"`
-	Method  string            `yaml:"method"`
-	Timeout time.Duration     `yaml:"timeout"`
-	Headers map[string]string `yaml:"headers"`
+	Name      string            `yaml:"name"`
+	Cron      string            `yaml:"cron"`
+	URL       string            `yaml:"url"`
+	Method    string            `yaml:"method"`
+	Timeout   time.Duration     `yaml:"timeout"`
+	Headers   map[string]string `yaml:"headers"`
+	OnFailure string            `yaml:"on_failure"`
 }
 
 func (c Check) validate() error {

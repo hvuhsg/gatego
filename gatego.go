@@ -71,18 +71,19 @@ func (gg GateGo) Run() error {
 }
 
 func createChecker(services []config.Service) *Checker {
-	checker := &Checker{Delay: 5 * time.Second, OnFailure: func(err error) {}}
+	checker := &Checker{Delay: 5 * time.Second}
 
 	for _, service := range services {
 		for _, path := range service.Paths {
 			for _, checkConfig := range path.Checks {
 				check := Check{
-					Name:    checkConfig.Name,
-					Cron:    checkConfig.Cron,
-					URL:     checkConfig.URL,
-					Method:  checkConfig.Method,
-					Timeout: checkConfig.Timeout,
-					Headers: checkConfig.Headers,
+					Name:      checkConfig.Name,
+					Cron:      checkConfig.Cron,
+					URL:       checkConfig.URL,
+					Method:    checkConfig.Method,
+					Timeout:   checkConfig.Timeout,
+					Headers:   checkConfig.Headers,
+					OnFailure: checkConfig.OnFailure,
 				}
 
 				checker.Checks = append(checker.Checks, check)

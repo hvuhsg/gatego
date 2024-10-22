@@ -1,6 +1,7 @@
 package gatego
 
 import (
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -130,6 +131,67 @@ func TestChecker_Start(t *testing.T) {
 			err := tt.checker.Start()
 			if (err != nil) != tt.expectedError {
 				t.Errorf("Checker.Start() error = %v, expectedError %v", err, tt.expectedError)
+			}
+
+			// Clean up scheduler if it was created
+			if tt.checker.scheduler != nil {
+				tt.checker.scheduler.Stop()
+			}
+		})
+	}
+}
+
+func TestChecker_OnFailure(t *testing.T) {
+	tests := []struct {
+		name          string
+		checker       Checker
+		expectedError bool
+	}{
+		{
+			name: "on failure command with valid command",
+			checker: Checker{
+				Delay: 1 * time.Second,
+				Checks: []Check{
+					{
+						Name:      "test-check-failure",
+						Cron:      "* * * * *",
+						Method:    "GET",
+						URL:       "http://example.com",
+						Timeout:   5 * time.Second,
+						OnFailure: "echo check '$check_name' failed at $date: $error",
+					},
+				},
+			},
+			expectedError: false,
+		},
+		{
+			name: "on failure command with invalid command",
+			checker: Checker{
+				Delay: 1 * time.Second,
+				Checks: []Check{
+					{
+						Name:      "test-check-failure",
+						Cron:      "* * * * *",
+						Method:    "GET",
+						URL:       "http://example.com",
+						Timeout:   5 * time.Second,
+						OnFailure: "invalidCommand $error",
+					},
+				},
+			},
+			expectedError: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Simulate a failure scenario by injecting an error
+			err := errors.New("Connection timeout")
+			err = handleFailure(tt.checker.Checks[0], err)
+
+			// Check if an error was returned and if it matches the expected result
+			if (err != nil) != tt.expectedError {
+				t.Errorf("handleFailure() error = %v, expectedError %v", err, tt.expectedError)
 			}
 
 			// Clean up scheduler if it was created
