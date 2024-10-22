@@ -1,4 +1,4 @@
-package gatego
+package monitor
 
 import (
 	"errors"
@@ -89,12 +89,12 @@ func TestCheck_run(t *testing.T) {
 func TestChecker_Start(t *testing.T) {
 	tests := []struct {
 		name          string
-		checker       Checker
+		checker       Monitor
 		expectedError bool
 	}{
 		{
 			name: "successful start",
-			checker: Checker{
+			checker: Monitor{
 				Delay: 1 * time.Second,
 				Checks: []Check{
 					{
@@ -110,7 +110,7 @@ func TestChecker_Start(t *testing.T) {
 		},
 		{
 			name: "invalid cron expression",
-			checker: Checker{
+			checker: Monitor{
 				Delay: 1 * time.Second,
 				Checks: []Check{
 					{
@@ -144,12 +144,12 @@ func TestChecker_Start(t *testing.T) {
 func TestChecker_OnFailure(t *testing.T) {
 	tests := []struct {
 		name          string
-		checker       Checker
+		checker       Monitor
 		expectedError bool
 	}{
 		{
 			name: "on failure command with valid command",
-			checker: Checker{
+			checker: Monitor{
 				Delay: 1 * time.Second,
 				Checks: []Check{
 					{
@@ -166,7 +166,7 @@ func TestChecker_OnFailure(t *testing.T) {
 		},
 		{
 			name: "on failure command with invalid command",
-			checker: Checker{
+			checker: Monitor{
 				Delay: 1 * time.Second,
 				Checks: []Check{
 					{
