@@ -58,7 +58,8 @@ func TestConfigValidate(t *testing.T) {
 		currentVersion string
 		wantErr        bool
 	}{
-		{"Valid config", Config{Version: "1.0.0", Host: "localhost", Services: []Service{{Domain: "example.com", Paths: []Path{{Path: "/api", Destination: ptr("http://api.example.com")}}}}}, "1.0.0", false},
+		{"Valid config", Config{Version: "1.0.0", Host: "localhost", Port: 80, Services: []Service{{Domain: "example.com", Paths: []Path{{Path: "/api", Destination: ptr("http://api.example.com")}}}}}, "1.0.0", false},
+		{"AutoTLS with port != 443", Config{Version: "1.0.0", Host: "localhost", Port: 80, TLS: TLS{Auto: true, Domains: []string{"example.com"}}, Services: []Service{{Domain: "example.com", Paths: []Path{{Path: "/api", Destination: ptr("http://api.example.com")}}}}}, "1.0.0", true},
 		{"Missing version", Config{Host: "localhost"}, "1.0.0", true},
 		{"Invalid version", Config{Version: "invalid", Host: "localhost"}, "1.0.0", true},
 		{"Future version", Config{Version: "2.0.0", Host: "localhost"}, "1.0.0", true},
