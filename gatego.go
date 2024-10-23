@@ -6,13 +6,15 @@ import (
 
 	"github.com/hvuhsg/gatego/config"
 	"github.com/hvuhsg/gatego/contextvalues"
+	"github.com/hvuhsg/gatego/pkg/monitor"
 )
 
 const serviceName = "gatego"
 
 type GateGo struct {
-	config config.Config
-	ctx    context.Context
+	config  config.Config
+	monitor *monitor.Monitor
+	ctx     context.Context
 }
 
 func New(ctx context.Context, config config.Config, version string) *GateGo {
@@ -38,9 +40,10 @@ func (gg GateGo) Run() error {
 		defer shutdown(context.Background())
 	}
 
-	// Gather checks and create checker
-	checker := createChecker(gg.config.Services)
-	checker.Start()
+	// Create checks start monitoring
+	healthChecks := createMonitorChecks(gg.config.Services)
+	gg.monitor = monitor.New(time.Second*5, healthChecks...)
+	gg.monitor.Start()
 
 	server, err := newServer(gg.ctx, gg.config, useOtel)
 	if err != nil {
@@ -60,27 +63,4 @@ func (gg GateGo) Run() error {
 	case <-gg.ctx.Done():
 		return server.Shutdown(context.Background())
 	}
-}
-
-func createChecker(services []config.Service) *Checker {
-	checker := &Checker{Delay: 5 * time.Second, OnFailure: func(err error) {}}
-
-	for _, service := range services {
-		for _, path := range service.Paths {
-			for _, checkConfig := range path.Checks {
-				check := Check{
-					Name:    checkConfig.Name,
-					Cron:    checkConfig.Cron,
-					URL:     checkConfig.URL,
-					Method:  checkConfig.Method,
-					Timeout: checkConfig.Timeout,
-					Headers: checkConfig.Headers,
-				}
-
-				checker.Checks = append(checker.Checks, check)
-			}
-		}
-	}
-
-	return checker
 }

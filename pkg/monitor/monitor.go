@@ -1,9 +1,11 @@
-package gatego
+package monitor
 
 import (
 	"fmt"
 	"log"
 	"net/http"
+	"os/exec"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -11,12 +13,13 @@ import (
 )
 
 type Check struct {
-	Name    string
-	Cron    string
-	URL     string
-	Method  string
-	Timeout time.Duration
-	Headers map[string]string
+	Name      string
+	Cron      string
+	URL       string
+	Method    string
+	Timeout   time.Duration
+	Headers   map[string]string
+	OnFailure string
 }
 
 func (c Check) run(onFailure func(error)) func() {
@@ -57,26 +60,52 @@ func (c Check) run(onFailure func(error)) func() {
 	}
 }
 
-type Checker struct {
+func handleFailure(check Check, err error) error {
+	// Expand command
+	command := check.OnFailure
+	date := time.Now().UTC().Format("2006-01-02 15:04:05")
+	command = strings.ReplaceAll(command, "$date", date)
+	command = strings.ReplaceAll(command, "$error", err.Error())
+	command = strings.ReplaceAll(command, "$check_name", check.Name)
+
+	// Run it
+	args := strings.Split(command, " ")
+	cmd := exec.Command(args[0], args[1:]...)
+	if err := cmd.Start(); err != nil {
+		return err
+	}
+	return nil
+}
+
+type Monitor struct {
 	Delay     time.Duration
 	Checks    []Check
 	scheduler *cron.Cron
-	OnFailure func(error)
 }
 
-func (c Checker) Start() error {
-	c.scheduler = cron.New()
+func New(delay time.Duration, checks ...Check) *Monitor {
+	return &Monitor{Delay: delay, Checks: checks, scheduler: cron.New()}
+}
 
-	for _, check := range c.Checks {
-		err := c.scheduler.Add(uuid.NewString(), check.Cron, check.run(c.OnFailure))
+func (m Monitor) Start() error {
+	m.scheduler = cron.New()
+
+	for _, check := range m.Checks {
+		err := m.scheduler.Add(uuid.NewString(), check.Cron, check.run(func(err error) {
+			if check.OnFailure != "" {
+				if err := handleFailure(check, err); err != nil {
+					log.Default().Printf("Failed to spawn on_failure command: %s\n", err)
+				}
+			}
+		}))
 		if err != nil {
 			return err
 		}
 	}
 
 	go func() {
-		time.Sleep(c.Delay)
-		c.scheduler.Start()
+		time.Sleep(m.Delay)
+		m.scheduler.Start()
 		log.Default().Println("Started running automated checks.")
 	}()
 
