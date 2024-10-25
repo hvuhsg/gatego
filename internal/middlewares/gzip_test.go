@@ -8,7 +8,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/hvuhsg/gatego/middlewares"
+	"github.com/hvuhsg/gatego/internal/middlewares"
 )
 
 // Helper to decode gzip data

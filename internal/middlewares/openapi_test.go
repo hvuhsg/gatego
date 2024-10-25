@@ -7,7 +7,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/hvuhsg/gatego/middlewares"
+	"github.com/hvuhsg/gatego/internal/middlewares"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

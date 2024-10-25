@@ -5,7 +5,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/hvuhsg/gatego/middlewares"
+	"github.com/hvuhsg/gatego/internal/middlewares"
 )
 
 // TestOmitHeadersMiddleware_OmitResponseHeaders tests that headers are omitted from the response

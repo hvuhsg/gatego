@@ -5,8 +5,8 @@ import (
 	"net/http/httputil"
 	"net/url"
 
-	"github.com/hvuhsg/gatego/config"
-	"github.com/hvuhsg/gatego/contextvalues"
+	"github.com/hvuhsg/gatego/internal/config"
+	"github.com/hvuhsg/gatego/internal/contextvalues"
 	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 )
 

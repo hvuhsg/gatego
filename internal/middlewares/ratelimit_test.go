@@ -7,7 +7,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/hvuhsg/gatego/middlewares"
+	"github.com/hvuhsg/gatego/internal/middlewares"
 )
 
 func TestRateLimitExceeded(t *testing.T) {

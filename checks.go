@@ -1,7 +1,7 @@
 package gatego
 
 import (
-	"github.com/hvuhsg/gatego/config"
+	"github.com/hvuhsg/gatego/internal/config"
 	"github.com/hvuhsg/gatego/pkg/monitor"
 )
 

@@ -6,7 +6,44 @@
 
 This reverse proxy server is designed to forward incoming requests to internal services, while offering advanced features such as SSL termination, rate limiting, content optimization, and OpenAPI-based request/response validation.
 
-## Key Features
+## Supported Features
+
+- 🔒 SSL Termination - HTTPS support with configurable SSL certificates
+
+- 🚀 Content Optimization
+  - Minification for HTML, CSS, JS, XML, JSON, and SVG
+  - GZIP compression support
+
+
+- ⚡ Performance Controls
+  - Configurable request timeouts
+  - Maximum request size limits
+  - Response caching for cacheable content
+
+
+- 🛡️ Security & Protection
+
+  - IP-based rate limiting (per minute/day)
+  - Request/response validation via OpenAPI
+
+- ⚖️ Load Balancing
+
+  - Multiple backend server support
+  - Round-robin, random, and least-latency policies
+  - Weighted distribution options
+
+
+- 📁 File Serving - Static file serving with path stripping
+
+- 🏥 Health Monitoring
+
+  - Automated health checks with cron scheduling
+Configurable failure notifications
+
+
+- 📊 Observability - OpenTelemetry integration for tracing and metrics
+
+## More About The Features
 ### 1. SSL Termination
 
 The proxy supports secure connections through SSL, with configurable paths to the SSL key and certificate files. This allows for secure HTTPS communication between clients and the reverse proxy.
@@ -218,10 +255,28 @@ services:
 
 ```
 
-### Breakdown:
+### Breakdown
+The configuration is organized into three main sections:
 
-- Services: You can define multiple domains and endpoints, each with their own routing and optimization settings.
-- Endpoints: You can have multiple endpoints that share a path prefix, the request will be routed to the longest muching endpoint.
+- Global Settings:
+  - Server configuration (host, port) 
+  - SSL settings 
+  - OpenTelemetry configuration
+
+
+- Services
+  - Domain-based routing
+  - Multiple endpoints per domain
+  - Path-based matching with longest-prefix wins
+
+
+- Endpoints
+  - Backend service configuration
+  - Performance optimizations
+  - Security controls
+  - Monitoring settings
+
+Each endpoint can be independently configured with its own set of features, allowing for flexible and granular control over different parts of your application.
 
 ## License
 

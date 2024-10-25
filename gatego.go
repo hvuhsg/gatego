@@ -2,10 +2,11 @@ package gatego
 
 import (
 	"context"
+	"fmt"
 	"time"
 
-	"github.com/hvuhsg/gatego/config"
-	"github.com/hvuhsg/gatego/contextvalues"
+	"github.com/hvuhsg/gatego/internal/config"
+	"github.com/hvuhsg/gatego/internal/contextvalues"
 	"github.com/hvuhsg/gatego/pkg/monitor"
 )
 
@@ -61,6 +62,7 @@ func (gg GateGo) Run() error {
 	case err = <-serveErrChan:
 		return err
 	case <-gg.ctx.Done():
+		fmt.Println("\nShutting down...")
 		return server.Shutdown(context.Background())
 	}
 }
