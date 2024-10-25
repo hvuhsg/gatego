@@ -258,23 +258,23 @@ services:
 ### Breakdown
 The configuration is organized into three main sections:
 
-1. Global Settings:
+- Global Settings:
   - Server configuration (host, port) 
   - SSL settings 
   - OpenTelemetry configuration
 
 
-2. Services
-- Domain-based routing
-- Multiple endpoints per domain
-- Path-based matching with longest-prefix wins
+- Services
+  - Domain-based routing
+  - Multiple endpoints per domain
+  - Path-based matching with longest-prefix wins
 
 
-3. Endpoints
-- Backend service configuration
-- Performance optimizations
-- Security controls
-- Monitoring settings
+- Endpoints
+  - Backend service configuration
+  - Performance optimizations
+  - Security controls
+  - Monitoring settings
 
 Each endpoint can be independently configured with its own set of features, allowing for flexible and granular control over different parts of your application.
 
