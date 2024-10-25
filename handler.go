@@ -7,9 +7,9 @@ import (
 	"os"
 	"slices"
 
-	"github.com/hvuhsg/gatego/config"
-	"github.com/hvuhsg/gatego/handlers"
-	"github.com/hvuhsg/gatego/middlewares"
+	"github.com/hvuhsg/gatego/internal/config"
+	"github.com/hvuhsg/gatego/internal/handlers"
+	"github.com/hvuhsg/gatego/internal/middlewares"
 )
 
 var ErrUnsupportedBaseHandler = errors.New("base handler unsupported")

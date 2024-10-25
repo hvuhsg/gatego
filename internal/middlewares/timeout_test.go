@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hvuhsg/gatego/middlewares"
+	"github.com/hvuhsg/gatego/internal/middlewares"
 )
 
 func TestTimeoutMiddleware(t *testing.T) {

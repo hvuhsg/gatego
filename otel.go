@@ -5,7 +5,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/hvuhsg/gatego/contextvalues"
+	"github.com/hvuhsg/gatego/internal/contextvalues"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploggrpc"
