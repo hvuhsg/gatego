@@ -15,7 +15,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/go-version"
-	"github.com/hvuhsg/gatego/middlewares"
+	"github.com/hvuhsg/gatego/internal/middlewares"
 	"github.com/hvuhsg/gatego/pkg/cron"
 	"gopkg.in/yaml.v3"
 )

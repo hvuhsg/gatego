@@ -5,7 +5,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/hvuhsg/gatego/middlewares"
+	"github.com/hvuhsg/gatego/internal/middlewares"
 )
 
 // Helper function to create a basic next handler that returns content with a specific content type

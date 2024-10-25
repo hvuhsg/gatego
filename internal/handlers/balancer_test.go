@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hvuhsg/gatego/config"
+	"github.com/hvuhsg/gatego/internal/config"
 )
 
 func TestNewBalancer(t *testing.T) {

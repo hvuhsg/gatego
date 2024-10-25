@@ -7,7 +7,7 @@ import (
 	"os/signal"
 
 	"github.com/hvuhsg/gatego"
-	"github.com/hvuhsg/gatego/config"
+	"github.com/hvuhsg/gatego/internal/config"
 )
 
 const version = "0.0.1"

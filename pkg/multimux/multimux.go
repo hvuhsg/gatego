@@ -6,25 +6,21 @@ package multimux
 import (
 	"net/http"
 	"strings"
+	"sync"
 )
 
 type MultiMux struct {
-	Hosts map[string]*http.ServeMux
+	Hosts sync.Map
 }
 
 func NewMultiMux() *MultiMux {
-	hosts := make(map[string]*http.ServeMux)
-	return &MultiMux{Hosts: hosts}
+	return &MultiMux{Hosts: sync.Map{}}
 }
 
 func (mm *MultiMux) RegisterHandler(host string, pattern string, handler http.Handler) {
 	cleanedHost := cleanHost(host)
-	mux, exists := mm.Hosts[cleanedHost]
-
-	if !exists {
-		mux = http.NewServeMux()
-		mm.Hosts[cleanedHost] = mux
-	}
+	muxAny, _ := mm.Hosts.LoadOrStore(cleanedHost, http.NewServeMux())
+	mux := muxAny.(*http.ServeMux)
 
 	cleanedPattern := strings.ToLower(pattern)
 
@@ -34,13 +30,14 @@ func (mm *MultiMux) RegisterHandler(host string, pattern string, handler http.Ha
 func (mm *MultiMux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	host := r.Host
 	cleanedHost := cleanHost(host)
-	mux, exists := mm.Hosts[cleanedHost]
+	muxAny, exists := mm.Hosts.Load(cleanedHost)
 
 	if !exists {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
 
+	mux := muxAny.(*http.ServeMux)
 	mux.ServeHTTP(w, r)
 }
 

@@ -27,7 +27,7 @@ func TestRegisterHandler(t *testing.T) {
 			mm.RegisterHandler(tt.host, tt.pattern, handler)
 
 			cleanedHost := cleanHost(tt.host)
-			mux, exists := mm.Hosts[cleanedHost]
+			mux, exists := mm.Hosts.Load(cleanedHost)
 			if !exists {
 				t.Errorf("Host %s was not registered", cleanedHost)
 			}
