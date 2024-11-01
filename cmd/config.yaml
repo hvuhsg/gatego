@@ -10,6 +10,7 @@ open_telemetry:
 
 services:
   - domain: localhost
+    add_anomaly_score_header: true
     endpoints:
       - path: /
         # directory: /home/yoyo/  # Instead of destination

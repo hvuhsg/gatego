@@ -10,6 +10,7 @@ import (
 	"github.com/hvuhsg/gatego/internal/config"
 	"github.com/hvuhsg/gatego/internal/handlers"
 	"github.com/hvuhsg/gatego/internal/middlewares"
+	"github.com/hvuhsg/gatego/internal/middlewares/security"
 )
 
 var ErrUnsupportedBaseHandler = errors.New("base handler unsupported")
@@ -72,6 +73,11 @@ func NewHandler(ctx context.Context, useOtel bool, service config.Service, path 
 			return nil, err
 		}
 		handlerWithMiddlewares.Add(ratelimiter)
+	}
+
+	// Add anomaly detector
+	if service.AddAnomalyScoreHeader {
+		handlerWithMiddlewares.Add(security.NewRoutingAnomalyDetector().AddAnomalyScore)
 	}
 
 	// Add headers

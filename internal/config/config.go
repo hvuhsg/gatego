@@ -159,8 +159,9 @@ func (p Path) validate() error {
 }
 
 type Service struct {
-	Domain string `yaml:"domain"` // The domain / host the request was sent to
-	Paths  []Path `yaml:"endpoints"`
+	Domain                string `yaml:"domain"` // The domain / host the request was sent to
+	Paths                 []Path `yaml:"endpoints"`
+	AddAnomalyScoreHeader bool   `yaml:"add_anomaly_score_header"`
 }
 
 func (s Service) validate() error {

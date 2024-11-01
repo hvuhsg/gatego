@@ -56,6 +56,10 @@
 						"type": "string",
 						"description": "Domain name for the service."
 					},
+					"add_anomaly_score_header": {
+						"type": "boolean",
+						"description": "Adds header to downstream request with routing anomaly score between 0 to 1"
+					},
 					"endpoints": {
 						"type": "array",
 						"items": {
