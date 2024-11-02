@@ -1,6 +1,7 @@
 package security
 
 import (
+	"fmt"
 	"math"
 	"net/http"
 	"net/url"
@@ -15,10 +16,6 @@ const (
 	tracingCookieName = "sad-trc"
 	cookieMaxAge      = 24 * 60 * 60 // 24 hours in seconds
 	refererHeaderName = "Referer"
-	tresholdForRating = 100 // The number of requests before starting to calculate anomaly score
-	minScore          = 100 // If the diviation form the avg diviation is lower then this then the session is not suspicuse
-	maxScore          = 200 // If the diviation form the avg diviation is larger then this then the session is fully suspicuse
-	anomalyHeaderName = "X-Anomaly-Score"
 )
 
 // RoutingAnomalyDetector handles path tracking logic and manages user sessions
@@ -30,10 +27,22 @@ type RoutingAnomalyDetector struct {
 	lastPaths             sync.Map // Maps trace_id to last path
 	trackerRoutingHistory sync.Map
 	tracker               tracker.Tracker
+
+	tresholdForRating int // The number of requests before starting to calculate anomaly score
+	minScore          int // If the diviation form the avg diviation is lower then this then the session is not suspicuse
+	maxScore          int // If the diviation form the avg diviation is larger then this then the session is fully suspicuse
+	anomalyHeaderName string
 }
 
-func NewRoutingAnomalyDetector() *RoutingAnomalyDetector {
-	return &RoutingAnomalyDetector{tracker: tracker.NewCookieTracker(tracingCookieName, cookieMaxAge, false)}
+func NewRoutingAnomalyDetector(headerName string, tresholdForRating, minScore, maxScore int) *RoutingAnomalyDetector {
+	return &RoutingAnomalyDetector{
+		graph:             pathgraph.NewPathGraph(),
+		tracker:           tracker.NewCookieTracker(tracingCookieName, cookieMaxAge, false),
+		anomalyHeaderName: headerName,
+		minScore:          minScore,
+		maxScore:          maxScore,
+		tresholdForRating: tresholdForRating,
+	}
 }
 
 // NewPathTracker creates a new PathTracker instance
@@ -90,11 +99,15 @@ func (pt *RoutingAnomalyDetector) AddAnomalyScore(next http.Handler) http.Handle
 		trackerH.jumpsCount++
 		trackerH.jumpsScoreSum += jumpScore
 
+		// update global stats
+		pt.numberOfJumps++
+		pt.scoreSum += jumpScore
+
 		pt.lastPaths.Store(traceID, currentPath)
 
 		anomalyScore := pt.calcAnomalyRating(trackerH)
 
-		r.Header.Set(anomalyHeaderName, strconv.FormatFloat(anomalyScore, 'f', -1, 64))
+		r.Header.Set(pt.anomalyHeaderName, strconv.FormatFloat(anomalyScore, 'f', 2, 64))
 
 		// Call the next handler
 		next.ServeHTTP(w, r)
@@ -118,31 +131,31 @@ func (pt *RoutingAnomalyDetector) getLastPath(traceID string, r *http.Request) (
 
 // 0 - is fully normal, 1 - fully suspicuse
 func (pt *RoutingAnomalyDetector) calcAnomalyRating(trackerH *trackerHistory) float64 {
-	avgGlobalScore := pt.scoreSum / float64(pt.numberOfJumps)
+	avgGlobalScore := (pt.scoreSum / float64(pt.numberOfJumps)) * 2
 	avgTrackerScore := trackerH.Avg()
 
 	diviation := math.Abs(avgGlobalScore - avgTrackerScore)
 
-	avgDiviationCopy := pt.avgDiviation
+	// If avg diviation is 0 it will return +Inf and get the correct result
+	anomalyScore := (diviation / (pt.avgDiviation / 100))
+
+	fmt.Println(avgGlobalScore, avgTrackerScore, diviation, pt.avgDiviation, anomalyScore)
 
 	// Update avgDiviation with new diviation
-	pt.avgDiviation = ((pt.avgDiviation * float64(pt.numberOfJumps-1)) + diviation) / float64(pt.numberOfJumps)
-
-	// If avg diviation is 0 it will return +Inf and get the correct result
-	anomalyScore := diviation / (avgDiviationCopy / 100)
+	pt.avgDiviation = ((pt.avgDiviation * float64(pt.numberOfJumps)) + diviation) / float64(pt.numberOfJumps)
 
 	// Only return 0 until useage data is collected
-	if pt.numberOfJumps < tresholdForRating {
+	if pt.numberOfJumps < pt.tresholdForRating {
 		return 0
 	}
 
-	if anomalyScore < minScore {
+	if anomalyScore < float64(pt.minScore) {
 		return 0
 	}
 
-	if anomalyScore > maxScore {
+	if anomalyScore > float64(pt.maxScore) {
 		return 1
 	}
 
-	return (anomalyScore - minScore) / 100
+	return (anomalyScore - float64(pt.minScore)) / 100
 }

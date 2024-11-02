@@ -125,7 +125,14 @@ The score ranging between 0 (normal request) to 1 (a-normal request)
 ```yaml
 services:
   - domain: your-domain.com
-    add_anomaly_score_header: true
+  
+    # Will add to downstream request an header with routing anomaly score between 0 (normal) and 1 (suspicuse)
+    anomaly_detection: 
+      active: true
+      header_name: "X-Anomaly-Score" # (Optional) [Default: X-Anomaly-Score]
+      min_score: 100 # (Optional) Every internal score below this number is 0 [Default: 100]
+      max_score: 100 # (Optional) Every internal score above this number is 1 [Default: 200]
+      treshold_for_rating: 100 # (Optional) The amount of requests to collect stats on before starting to rate anomaly [Default: 100]
 ```
 
 
@@ -215,7 +222,12 @@ services:
   - domain: your-domain.com
 
     # Will add to downstream request an header with routing anomaly score between 0 (normal) and 1 (suspicuse)
-    add_anomaly_score_header: true
+    anomaly_detection: 
+      active: true
+      header_name: "X-Anomaly-Score" # (Optional) [Default: X-Anomaly-Score]
+      min_score: 100 # (Optional) Every internal score below this number is 0 [Default: 100]
+      max_score: 100 # (Optional) Every internal score above this number is 1 [Default: 200]
+      treshold_for_rating: 100 # (Optional) The amount of requests to collect stats on before starting to rate anomaly [Default: 100]
   
     endpoints:
       - path: /your-endpoint  # will be served for every request with path that start with /your-endpoint (Example: /your-endpoint/1)

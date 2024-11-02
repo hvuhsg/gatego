@@ -2,7 +2,8 @@ package pathgraph
 
 import "strings"
 
-const IncRate = 0.01
+const incRate = 1
+const baseWeight = 0
 
 // PathVertex represents a vertex in the graph
 type PathVertex struct {
@@ -38,13 +39,13 @@ func (g *PathGraph) AddJump(sourcePath, destPath string) float64 {
 	if !exists {
 		vertex = &PathVertex{
 			Path:   destPath,
-			Weight: 0,
+			Weight: baseWeight,
 		}
 		g.adjacencyList[sourcePath][destPath] = vertex
 	}
 
 	// Increment weight
-	vertex.Weight++
+	vertex.Weight += incRate
 
 	return vertex.Weight - 1 // The original weight (before the jump)
 }
@@ -88,7 +89,7 @@ func (g *PathGraph) GetAllPaths() []string {
 }
 
 func normalizePath(path string) string {
-	if path[0] != '/' {
+	if len(path) == 0 || path[0] != '/' {
 		path = "/" + path
 	}
 

@@ -158,10 +158,42 @@ func (p Path) validate() error {
 	return nil
 }
 
+type AnomalyDetection struct {
+	HeaderName        string `yaml:"header_name"`
+	MinScore          int    `yaml:"min_score"`
+	MaxScore          int    `yaml:"max_score"`
+	TresholdForRating int    `yaml:"treshold_for_rating"`
+	Active            bool   `yaml:"active"`
+}
+
+func (a *AnomalyDetection) validate() error {
+	if a.HeaderName == "" {
+		a.HeaderName = "X-Anomaly-Score"
+	}
+
+	if a.MinScore == 0 {
+		a.MinScore = 100
+	}
+
+	if a.MaxScore == 0 {
+		a.MaxScore = 200
+	}
+
+	if a.TresholdForRating == 0 {
+		a.TresholdForRating = 100
+	}
+
+	if a.MaxScore <= a.MinScore {
+		return errors.New("anomaly detection maxScore MUST be grater the minScore")
+	}
+
+	return nil
+}
+
 type Service struct {
-	Domain                string `yaml:"domain"` // The domain / host the request was sent to
-	Paths                 []Path `yaml:"endpoints"`
-	AddAnomalyScoreHeader bool   `yaml:"add_anomaly_score_header"`
+	Domain           string            `yaml:"domain"` // The domain / host the request was sent to
+	Paths            []Path            `yaml:"endpoints"`
+	AnomalyDetection *AnomalyDetection `yaml:"anomaly_detection"`
 }
 
 func (s Service) validate() error {
@@ -171,6 +203,12 @@ func (s Service) validate() error {
 
 	for _, path := range s.Paths {
 		if err := path.validate(); err != nil {
+			return err
+		}
+	}
+
+	if s.AnomalyDetection != nil {
+		if err := s.AnomalyDetection.validate(); err != nil {
 			return err
 		}
 	}

@@ -56,9 +56,37 @@
 						"type": "string",
 						"description": "Domain name for the service."
 					},
-					"add_anomaly_score_header": {
-						"type": "boolean",
-						"description": "Adds header to downstream request with routing anomaly score between 0 to 1"
+					"anomaly_detection": {
+						"type": "object",
+						"description": "Adds header to downstream request with routing anomaly score between 0 to 1",
+						"properties": {
+							"header_name": {
+								"type":"string",
+								"description": "The header name that will hold the anomaly score [Default X-Anomaly-Score]"
+							},
+							"min_score": {
+								"type":"integer",
+								"default": 100,
+								"description": "Below that score the anomaly score is 0",
+								"minimum": 0
+							},
+							"max_score": {
+								"type":"integer",
+								"default": 200,
+								"description": "Above that score the anomaly score is 1",
+								"minimum": 0
+							},
+							"treshold_for_rating": {
+								"type": "integer",
+								"default": 100,
+								"description": "How many requests to collect data from before starting to calculate anomaly score",
+								"minimum": 0
+							},
+							"active": {
+								"type":"boolean",
+								"description": "Activate the anomaly detector"
+							}
+						}
 					},
 					"endpoints": {
 						"type": "array",
