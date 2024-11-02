@@ -1,7 +1,6 @@
 package security
 
 import (
-	"fmt"
 	"math"
 	"net/http"
 	"net/url"
@@ -10,6 +9,8 @@ import (
 
 	"github.com/hvuhsg/gatego/pkg/pathgraph"
 	"github.com/hvuhsg/gatego/pkg/tracker"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 )
 
 const (
@@ -59,6 +60,8 @@ func NewPathTracker(graph *pathgraph.PathGraph) *RoutingAnomalyDetector {
 // We save tracker (session) jumps history and calculate an anomaly score, and add it as header to the request.
 func (pt *RoutingAnomalyDetector) AddAnomalyScore(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		span := trace.SpanFromContext(r.Context())
+
 		// Get or create trace ID
 		traceID := pt.tracker.GetTrackerID(r)
 
@@ -106,6 +109,7 @@ func (pt *RoutingAnomalyDetector) AddAnomalyScore(next http.Handler) http.Handle
 		pt.lastPaths.Store(traceID, currentPath)
 
 		anomalyScore := pt.calcAnomalyRating(trackerH)
+		span.SetAttributes(attribute.Float64("RoutingAnomalyScore", anomalyScore))
 
 		r.Header.Set(pt.anomalyHeaderName, strconv.FormatFloat(anomalyScore, 'f', 2, 64))
 
@@ -138,8 +142,6 @@ func (pt *RoutingAnomalyDetector) calcAnomalyRating(trackerH *trackerHistory) fl
 
 	// If avg diviation is 0 it will return +Inf and get the correct result
 	anomalyScore := (diviation / (pt.avgDiviation / 100))
-
-	fmt.Println(avgGlobalScore, avgTrackerScore, diviation, pt.avgDiviation, anomalyScore)
 
 	// Update avgDiviation with new diviation
 	pt.avgDiviation = ((pt.avgDiviation * float64(pt.numberOfJumps)) + diviation) / float64(pt.numberOfJumps)
