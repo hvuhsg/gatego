@@ -25,6 +25,7 @@ This reverse proxy server is designed to forward incoming requests to internal s
 
   - IP-based rate limiting (per minute/day)
   - Request/response validation via OpenAPI
+  - Anomaly detection score (per session)
 
 - ⚖️ Load Balancing
 
@@ -114,7 +115,28 @@ You can specify the OpenAPI file path in the configuration, and the server will 
   openapi: /path/to/openapi.yaml  # OpenAPI file for request/response validation
 ```
 
-### 6. Load Balancing and File Serving
+
+### 6. Routing Anomaly Detection
+
+The Server will calculate an anomaly score for the request based on global avg routing and session avg routing.
+The score is added as a header to the request `X-Anomaly-Score`.
+The score ranging between 0 (normal request) to 1 (a-normal request)
+
+```yaml
+services:
+  - domain: your-domain.com
+  
+    # Will add to downstream request an header with routing anomaly score between 0 (normal) and 1 (suspicuse)
+    anomaly_detection: 
+      active: true
+      header_name: "X-Anomaly-Score" # (Optional) [Default: X-Anomaly-Score]
+      min_score: 100 # (Optional) Every internal score below this number is 0 [Default: 100]
+      max_score: 100 # (Optional) Every internal score above this number is 1 [Default: 200]
+      treshold_for_rating: 100 # (Optional) The amount of requests to collect stats on before starting to rate anomaly [Default: 100]
+```
+
+
+### 7. Load Balancing and File Serving
 
 File serving is used when the `directory` field is set.
 > The endpoint path is removed from the request path before the file lookup. For example a path of /static and request path of /static/file.txt and a directory /var/www will search the file in /var/www/file.txt and not /var/www/static/file.txt
@@ -144,7 +166,7 @@ The Server support load balancing between a number of backend servers and allow 
 - `least-latency` (**not** affected by weights)
 
 
-### 7. Health Checks
+### 8. Health Checks
 
 The server supports automated health checks for backend services. You can configure periodic checks to monitor the health of your backend servers under each endpoint's configuration.
 
@@ -168,7 +190,7 @@ The server supports automated health checks for backend services. You can config
         Authorization: "Bearer abc123"
 ```
 
-### 8. OpenTelemetry Integration
+### 9. OpenTelemetry Integration
 The server includes built-in support for OpenTelemetry, enabling comprehensive observability through distributed tracing, metrics, and logging. This integration helps monitor application performance, troubleshoot issues, and understand system behavior in distributed environments.
 
 ```yaml
@@ -198,6 +220,15 @@ open_telemetry:
 
 services:
   - domain: your-domain.com
+
+    # Will add to downstream request an header with routing anomaly score between 0 (normal) and 1 (suspicuse)
+    anomaly_detection: 
+      active: true
+      header_name: "X-Anomaly-Score" # (Optional) [Default: X-Anomaly-Score]
+      min_score: 100 # (Optional) Every internal score below this number is 0 [Default: 100]
+      max_score: 100 # (Optional) Every internal score above this number is 1 [Default: 200]
+      treshold_for_rating: 100 # (Optional) The amount of requests to collect stats on before starting to rate anomaly [Default: 100]
+  
     endpoints:
       - path: /your-endpoint  # will be served for every request with path that start with /your-endpoint (Example: /your-endpoint/1)
 

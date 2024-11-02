@@ -4,12 +4,16 @@ version: '0.0.1'
 host: localhost
 port: 8004
 
-open_telemetry:
-  endpoint: "localhost:4317"
-  sample_ratio: 1
+# open_telemetry:
+#   endpoint: "localhost:4317"
+#   sample_ratio: 1
 
 services:
   - domain: localhost
+    
+    anomaly_detection: 
+      active: true
+    
     endpoints:
       - path: /
         # directory: /home/yoyo/  # Instead of destination
