@@ -6,7 +6,6 @@ import (
 	"net/url"
 	"strconv"
 	"sync"
-	"time"
 
 	"github.com/hvuhsg/gatego/pkg/pathgraph"
 	"github.com/hvuhsg/gatego/pkg/tracker"
@@ -14,12 +13,11 @@ import (
 
 const (
 	tracingCookieName = "sad-trc"
-	cookieMaxAge      = 72 * 60 * 60   // 24 hours in seconds
-	refreshDuration   = time.Hour * 10 // If the duration until expiration is less the this refresh cookie
+	cookieMaxAge      = 24 * 60 * 60 // 24 hours in seconds
 	refererHeaderName = "Referer"
 	tresholdForRating = 100 // The number of requests before starting to calculate anomaly score
-	minPresentage     = 100 // If the diviation form the avg diviation is lower then this then the session is not suspicuse
-	maxPresentage     = 200 // If the diviation form the avg diviation is larger then this then the session is fully suspicuse
+	minScore          = 100 // If the diviation form the avg diviation is lower then this then the session is not suspicuse
+	maxScore          = 200 // If the diviation form the avg diviation is larger then this then the session is fully suspicuse
 	anomalyHeaderName = "X-Anomaly-Score"
 )
 
@@ -120,10 +118,6 @@ func (pt *RoutingAnomalyDetector) getLastPath(traceID string, r *http.Request) (
 
 // 0 - is fully normal, 1 - fully suspicuse
 func (pt *RoutingAnomalyDetector) calcAnomalyRating(trackerH *trackerHistory) float64 {
-	if pt.numberOfJumps < tresholdForRating {
-		return 0
-	}
-
 	avgGlobalScore := pt.scoreSum / float64(pt.numberOfJumps)
 	avgTrackerScore := trackerH.Avg()
 
@@ -134,15 +128,21 @@ func (pt *RoutingAnomalyDetector) calcAnomalyRating(trackerH *trackerHistory) fl
 	// Update avgDiviation with new diviation
 	pt.avgDiviation = ((pt.avgDiviation * float64(pt.numberOfJumps-1)) + diviation) / float64(pt.numberOfJumps)
 
-	normalizedAnomalyScore := diviation / (avgDiviationCopy / 100) / 100
+	// If avg diviation is 0 it will return +Inf and get the correct result
+	anomalyScore := diviation / (avgDiviationCopy / 100)
 
-	if normalizedAnomalyScore < 1 {
+	// Only return 0 until useage data is collected
+	if pt.numberOfJumps < tresholdForRating {
 		return 0
 	}
 
-	if normalizedAnomalyScore > 2 {
+	if anomalyScore < minScore {
+		return 0
+	}
+
+	if anomalyScore > maxScore {
 		return 1
 	}
 
-	return 1 - normalizedAnomalyScore
+	return (anomalyScore - minScore) / 100
 }
