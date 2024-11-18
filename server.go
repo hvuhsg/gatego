@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/hvuhsg/gatego/internal/config"
+	"github.com/hvuhsg/gatego/internal/oauth"
 	"github.com/hvuhsg/gatego/pkg/multimux"
 )
 
@@ -18,10 +19,12 @@ type gategoServer struct {
 }
 
 func newServer(ctx context.Context, config config.Config, useOtel bool) (*gategoServer, error) {
-	multimuxer, err := createMultiMuxer(ctx, config.Services, useOtel)
+	multimuxer, err := newMultiMuxer(ctx, config.Services, useOtel)
 	if err != nil {
 		return nil, err
 	}
+
+	rootHandler := newRootHandler(multimuxer, config.OAuth)
 
 	addr := fmt.Sprintf("%s:%d", config.Host, config.Port)
 
@@ -31,13 +34,29 @@ func newServer(ctx context.Context, config config.Config, useOtel bool) (*gatego
 		BaseContext:  func(_ net.Listener) context.Context { return ctx },
 		ReadTimeout:  time.Second,
 		WriteTimeout: 10 * time.Second,
-		Handler:      multimuxer,
+		Handler:      rootHandler,
 	}
 
 	return &gategoServer{Server: server}, nil
 }
 
-func createMultiMuxer(ctx context.Context, services []config.Service, useOtel bool) (*multimux.MultiMux, error) {
+func newRootHandler(multimuxer *multimux.MultiMux, oauthConfig *oauth.OAuthConfig) http.Handler {
+	rootHanlder := http.NewServeMux()
+
+	// Custom configured services
+	rootHanlder.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		multimuxer.ServeHTTP(w, r)
+	})
+
+	// Handle OAuth if configured
+	if oauthConfig != nil {
+		rootHanlder.Handle(oauth.BuildOAuthEndpointURL(oauthConfig.BaseURL), oauth.NewOAuthHandler(*oauthConfig))
+	}
+
+	return rootHanlder
+}
+
+func newMultiMuxer(ctx context.Context, services []config.Service, useOtel bool) (*multimux.MultiMux, error) {
 	mm := multimux.NewMultiMux()
 
 	for _, service := range services {

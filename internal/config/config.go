@@ -16,6 +16,8 @@ import (
 
 	"github.com/hashicorp/go-version"
 	"github.com/hvuhsg/gatego/internal/middlewares"
+	"github.com/hvuhsg/gatego/internal/oauth"
+
 	"github.com/hvuhsg/gatego/pkg/cron"
 	"gopkg.in/yaml.v3"
 )
@@ -291,6 +293,8 @@ type Config struct {
 
 	OTEL *OTEL `yaml:"open_telemetry"`
 
+	OAuth *oauth.OAuthConfig `yaml:"oauth"`
+
 	// TLS options
 	TLS TLS `yaml:"ssl"`
 
@@ -301,13 +305,11 @@ func (c Config) Validate(currentVersion string) error {
 	if c.Version == "" {
 		return errors.New("version is required")
 	}
-
 	progVersion, _ := version.NewVersion(currentVersion)
 	configVersion, err := version.NewVersion(c.Version)
 	if err != nil {
 		return errors.New("version is invalid")
 	}
-
 	if configVersion.Compare(progVersion) > 0 {
 		return errors.New("config version is not supported (too advanced)")
 	}
@@ -332,6 +334,12 @@ func (c Config) Validate(currentVersion string) error {
 
 	if c.TLS.Auto && c.Port != 443 {
 		return errors.New("the auto tls feature is only available if the server runs on port 443")
+	}
+
+	if c.OAuth != nil {
+		if err := c.OAuth.Validate(); err != nil {
+			return err
+		}
 	}
 
 	for _, service := range c.Services {
