@@ -2,7 +2,6 @@ package oauth
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -29,8 +28,8 @@ func NewOAuthHandler(config OAuthConfig) *OAuthHandler {
 
 	handler := &OAuthHandler{config: config, muxer: muxer}
 
-	muxer.HandleFunc("/callback", handler.callbackHandler)
-	muxer.HandleFunc("/login", handler.loginHandler)
+	muxer.HandleFunc("/{provider}/callback", handler.callbackHandler)
+	muxer.HandleFunc("/{provider}/login", handler.loginHandler)
 
 	return handler
 }
@@ -40,7 +39,7 @@ func (oa OAuthHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (oa OAuthHandler) loginHandler(w http.ResponseWriter, r *http.Request) {
-	providerName := r.URL.Query().Get("provider")
+	providerName := r.PathValue("provider")
 
 	// Get provider
 	provider, err := auth.NewProviderByName(providerName)
@@ -53,7 +52,7 @@ func (oa OAuthHandler) loginHandler(w http.ResponseWriter, r *http.Request) {
 	// Configure and validate provider is enabled
 	err = oa.config.NamedAuthProviderConfigs()[providerName].SetupProvider(provider)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -95,7 +94,7 @@ func (oa OAuthHandler) loginHandler(w http.ResponseWriter, r *http.Request) {
 	// Save auth session
 	items := map[string]any{"state": state, "codeVerifier": codeVerifier}
 	sessionCookie := session.JWTCookie{
-		Cookie: &http.Cookie{Name: flowStateCookieName},
+		Cookie: &http.Cookie{Name: flowStateCookieName, Value: ""},
 	}
 	sessionCookie.SetItems(oa.securityKey, items)
 	http.SetCookie(w, sessionCookie.Cookie)
@@ -104,7 +103,7 @@ func (oa OAuthHandler) loginHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (oa OAuthHandler) callbackHandler(w http.ResponseWriter, r *http.Request) {
-	providerName := r.URL.Query().Get("provider")
+	providerName := r.PathValue("provider")
 	code := r.URL.Query().Get("code")
 	stateFromProvider := r.URL.Query().Get("state")
 	cookie, err := r.Cookie(flowStateCookieName)
@@ -175,7 +174,8 @@ func (oa OAuthHandler) callbackHandler(w http.ResponseWriter, r *http.Request) {
 
 	sessionCookie := &session.JWTCookie{
 		Cookie: &http.Cookie{
-			Name: UserAuthCookieName,
+			Name:  UserAuthCookieName,
+			Value: "",
 		},
 	}
 
@@ -190,22 +190,15 @@ func (oa OAuthHandler) callbackHandler(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, oa.config.AfterLoginRedirect, http.StatusTemporaryRedirect)
 }
 
-// <baseURL>/provider/{provider}
-func BuildOAuthEndpointURL(baseURL string) string {
-	if baseURL == "" {
-		baseURL = DEFAULT_BASE_URL
-	}
-
-	endpUrl, err := url.JoinPath(baseURL, "/provider/{provider}") // TODO: Check how to set path param placeholder
-	if err != nil {
-		panic(errors.New("can't create base oauth endpoint path url"))
-	}
-	return endpUrl
-}
-
 // Should create a callback url for the provider response
-// Return's http://<host>/<BaseURL>/callback/<providerName>
+// Return's http://<host>/<BaseURL>/<providerName>/callback
 func buildRedirectURL(host string, baseURL string, providerName string) string {
-	callbackURL := BuildOAuthEndpointURL(baseURL)
-	return fmt.Sprintf("http://%s/%s", host, strings.ReplaceAll(callbackURL, "{provider}", providerName))
+	endpointUrl, err := url.JoinPath(baseURL, providerName)
+	if err != nil {
+		panic("can't create oauth callback url")
+	}
+
+	endpointUrl = strings.TrimPrefix(endpointUrl, "/")
+
+	return fmt.Sprintf("http://%s/%s", host, endpointUrl)
 }

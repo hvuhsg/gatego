@@ -50,7 +50,7 @@ func newRootHandler(multimuxer *multimux.MultiMux, oauthConfig *oauth.OAuthConfi
 
 	// Handle OAuth if configured
 	if oauthConfig != nil {
-		rootHanlder.Handle(oauth.BuildOAuthEndpointURL(oauthConfig.BaseURL), oauth.NewOAuthHandler(*oauthConfig))
+		rootHanlder.Handle(oauthConfig.BaseURL, oauth.NewOAuthHandler(*oauthConfig))
 	}
 
 	return rootHanlder
